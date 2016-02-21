@@ -1,0 +1,11 @@
+a)	Installieren Sie den Tomcat8 Server mit der Beiligenden Installationsroutine.
+
+b) 	nach der Installation des Servers, navigieren sie zum Ordner Iher Tomcat Installation aus a):
+	1. 	Hier geben Sie ihrem System Nutzer alle Rechte auf diesem Verzeichniss ( lesen schreiben )
+    2. 	entpacken sie das hier enthaltene Ziparchiv conf, in das Tomcat8 stamm Verzeichniss:
+    	z.b. C:\Tomcat und ersetzen Sie den dort Vorhanden Ordner conf durch den im zip Archiv.
+    	Dies Aktiviert SSl und den JDBC loginRealm auf Ihrem Server.
+
+c) 	navigieren sie zum Ordner Iher Tomcat Installation aus a):
+	in das Verzeichniss Tomcatinstallation/lib
+	in diesem verzeichniss legen sie das enthaltene Jar File aus dem lib.zip ab. 

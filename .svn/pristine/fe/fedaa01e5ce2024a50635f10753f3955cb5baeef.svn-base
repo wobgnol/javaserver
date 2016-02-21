@@ -1,0 +1,107 @@
+package de.moaiosbeer.db.models;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
+import javax.persistence.Table;
+import javax.persistence.TableGenerator;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Pattern;
+
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
+
+@Entity
+@Table (name="User_V1_01")
+public class User_V1_01 {
+	
+	@Id
+	@TableGenerator(name="User_V1_01_ID", table="User_V1_01_PK" , pkColumnName="User_V1_01_ID" ,pkColumnValue="User_V1_01_Value" , allocationSize=1)
+	@GeneratedValue(strategy=GenerationType.TABLE , generator="User_V1_01_ID")
+	@Column(name="user_id")
+	private long id;
+	
+	@NotNull (message = "Username darf nicht null sein")
+	@Column(name="username", nullable=false)
+	@Pattern(regexp="^[A-Za-z0-9_-]{3,15}$",message = "Ungültiges Zeichen im Name")
+	private String username;
+	
+	@NotNull (message = "Passwort darf nicht null sein")
+	@Column(name="password", nullable=false)
+	private String password;
+	
+	@NotNull (message = "User Rolle darf nicht null sein")
+	@Column(name="role",nullable=false)
+	@ManyToMany(cascade = CascadeType.ALL)
+	@LazyCollection(LazyCollectionOption.FALSE) 
+	private List<TomcatUserRoles_V1_01> roles = new ArrayList<TomcatUserRoles_V1_01>(0);
+	
+	// wichtig ! FetchType.EAGER sonst kann Jakson nicht die games eines Student ausgeben:
+	@ManyToMany(cascade = CascadeType.ALL)
+	@LazyCollection(LazyCollectionOption.FALSE) 
+	private List<Game_V1_01> gamelist = new ArrayList<Game_V1_01>(0);
+
+	
+	public List<Game_V1_01> getGamelist() {
+		return gamelist;
+	}
+
+	public void setGamelist(List<Game_V1_01> gamelist) {
+		this.gamelist = gamelist;
+	}
+
+	public String getUsername() {
+		return username;
+	}
+
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public List<TomcatUserRoles_V1_01> getRoles() {
+		return roles;
+	}
+
+	public void setRoles(List<TomcatUserRoles_V1_01> roles) {
+		this.roles = roles;
+	}
+
+	public long getId() {
+		return id;
+	}
+	
+	
+	// Konstrucktoren----------------------------------------Start
+		public User_V1_01() {
+			// Standart Konstruktor
+		}
+		
+		public User_V1_01(Long id ) {
+			// ID Konstruktor
+			this.id = id;
+		}
+		
+		public User_V1_01(String username,String password) {
+			// User Konstruktor
+			this.username = username;
+			this.password = password;
+		}
+		// Konstrucktoren----------------------------------------Ende
+	
+}

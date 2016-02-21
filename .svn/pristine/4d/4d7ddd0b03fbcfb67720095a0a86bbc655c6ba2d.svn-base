@@ -1,0 +1,333 @@
+package de.moaiosbeer.dao;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.eclipse.jdt.internal.compiler.apt.model.Factory;
+
+import de.moaiosbeer.db.models.Game_V1_01;
+import de.moaiosbeer.db.models.User_V1_01;
+import de.moaiosbeer.hibernate.Hib_DB_Conn_V1_01;
+
+
+public class Game_V1_01_DaO {
+	
+	private Hib_DB_Conn_V1_01 Con = new Hib_DB_Conn_V1_01();
+
+	private long game_id;
+	private String gamerole;
+
+	//TODO Game erstellen -> Methode game übernehmen -> public fehlerliste 
+//===========================NEW=============================================================	NEW Game
+	public void newGame(Game_V1_01 game)
+	{
+		/*
+		 Programmablauf:
+		 Game entgegennehmen und Validieren.=> Unique Exceptionhandling(Eigene Funktion).
+		 Beim Fehler Fehlerliste überschreiben -> sonst Fehlermeldung
+		 
+		 */
+		try{
+			Con.Transaction_Start();
+			Con.getTransaction().setTimeout(10);	
+
+			Con.getSession().save(game);
+					
+			Con.getTransaction().commit();
+			System.out.println(new Date()+" || Hibernate: Transaction comited");
+		}catch(RuntimeException e){
+			try{
+				Con.getTransaction().rollback();
+				System.out.println("Rolback");
+			}catch(RuntimeException rbe){
+				//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+			}
+			throw e;
+		}finally{
+			if(Con.getSession()!=null){
+				Con.getSession().close();
+				System.out.println(new Date()+ " || Hibernate: Session Closed");
+				//TODO Log für Hibernate Sessions anlegen
+			}
+		}
+	}
+
+	//TODO Game ändern
+//===========================UPDATE==========================================================	UPDATE Game
+	public void updateGame(Game_V1_01 game)
+	{
+		try{
+			Con.Transaction_Start();
+			Con.getTransaction().setTimeout(10);
+		    // Gamerole ändern
+//			Con.getSession().createQuery(
+//			          "Update Game_V1_01 "
+//			          + "Set gamerole = '"+ gamerole + "'" + ", game_id = '"+ game_id + "'"
+//			          + "Where game_id = '"+ game_id + "';" ).iterate();
+
+			Con.getSession().update(game);
+			Con.getTransaction().commit();
+			System.out.println(new Date()+" || Hibernate: Transaction comited");
+		}catch(RuntimeException e){
+			try{
+				Con.getTransaction().rollback();
+				System.out.println("Rolback");
+			}catch(RuntimeException rbe){
+				//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+			}
+			throw e;
+		}finally{
+			if(Con.getSession()!=null){
+				Con.getSession().close();
+				System.out.println(new Date()+ " || Hibernate: Session Closed");
+				//TODO Log für Hibernate Sessions anlegen
+			}
+		}
+	}
+
+	//TODO Game löschen
+//===========================DELETE==========================================================	DELETE Game
+	public void deleteGame(Game_V1_01 game)
+	{
+		try{
+			Con.Transaction_Start();
+			Con.getTransaction().setTimeout(10);	
+
+			Con.getSession().delete(game);
+			
+		    // Gamerole Löschen
+//		    Con.getSession().createQuery(
+//			          "Delete From Game_V1_01 "
+//			          + "Where game_id = '"+ game_id + "' ;" ).iterate();
+
+			Con.getTransaction().commit();
+			System.out.println(new Date()+" || Hibernate: Transaction comited");
+		}catch(RuntimeException e){
+			try{
+				Con.getTransaction().rollback();
+				System.out.println("Rolback");
+			}catch(RuntimeException rbe){
+				//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+			}
+			throw e;
+		}finally{
+			if(Con.getSession()!=null){
+				Con.getSession().close();
+				System.out.println(new Date()+ " || Hibernate: Session Closed");
+				//TODO Log für Hibernate Sessions anlegen
+			}
+		}
+	}
+	
+	
+	//===========================GetGameIdByUserId========================================================	GetGameIdByUserId	
+		/* Ergänzt am 12.01.2016 19:28 
+		 * wird für den Session Controller genötigt,
+		 * um neuen Sessions anhand der Spieler ID 
+		 * zum jeweiligen Ziel dispatchen zu können*/
+		/**
+		 * Diese Methode ermittelt ob Ein User an einem laufenden Spiel Teilnimmt,
+		 * tut er dies giebt Sie die Spiel ID zurück,
+		 * ansonsten 0 ;
+		 * @param id UserID 
+		 * @return giebt einen Long wert zurück 
+		 */
+		public Long GetGameIdByUserId(Long userID){
+				try{
+					Con.Transaction_Start();
+					Con.getTransaction().setTimeout(10);	
+					/*Ein Spieler kann immer nur an einem Spiel Teilnehmen.
+					 * => Durchsuche die Liste aller laufenden spiele nach meiner userID*/
+					List<Game_V1_01> list = Con.getSession().createCriteria(Game_V1_01.class,"u").list();
+					// Initialiesieren auf 0
+					Long gameID = (long)0;
+					for(Game_V1_01 game : list){	// alle laufenden Spiele
+						if(game.getCurrentround() <= game.getMaxrounds())
+						{	//Liste der Teilnehmer dieses Spiels
+							List<User_V1_01> userlist = game.getUserlist();
+							for(User_V1_01 user : userlist)
+							{					
+								if(user.getId() == userID)
+								{	// nimmt ein User an einem Spiel teil, return spielID
+									gameID = game.getId();
+									return  gameID;
+								}
+							}
+						}
+					}
+
+					Con.getTransaction().commit();
+					System.out.println(new Date()+" || Hibernate: Transaction comited");
+				}catch(RuntimeException e){
+					try{
+						Con.getTransaction().rollback();
+						System.out.println("Rolback");
+					}catch(RuntimeException rbe){
+						//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+					}
+					throw e;
+				}finally{
+					if(Con.getSession()!=null){
+						Con.getSession().close();
+						System.out.println(new Date()+ " || Hibernate: Session Closed");
+						//TODO Log für Hibernate Sessions anlegen
+					}
+				}
+				return (long)0;
+			}
+
+//===========================GetGameById========================================================	GetGameById
+		public Game_V1_01 GetGameById(Long gameID){
+			/*GetGameById bekommt eine gameID übergeben und gibt das dazu passende Game Objekt zurück.
+			 * 
+			 */
+			try{
+				Con.Transaction_Start();
+				Con.getTransaction().setTimeout(10);	
+
+				List<Game_V1_01> list = Con.getSession().createCriteria(Game_V1_01.class).list();
+				
+				for(Game_V1_01 game : list){	// alle laufenden Spiele
+					if(game.getId() == gameID)
+					{	
+						return game;
+					}
+				}
+
+				Con.getTransaction().commit();
+				System.out.println(new Date()+" || Hibernate: Transaction comited");
+			}catch(RuntimeException e){
+				try{
+					Con.getTransaction().rollback();
+					System.out.println("Rolback");
+				}catch(RuntimeException rbe){
+					//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+				}
+				throw e;
+			}finally{
+				if(Con.getSession()!=null){
+					Con.getSession().close();
+					System.out.println(new Date()+ " || Hibernate: Session Closed");
+					//TODO Log für Hibernate Sessions anlegen
+				}
+			}
+			return null;
+		}
+//===========================PartOf==========================================================	PartOf Game
+	public boolean partofGame(Long id)
+	{
+		try{
+			Con.Transaction_Start();
+			Con.getTransaction().setTimeout(10);	
+
+			List<Game_V1_01> list = Con.getSession().createCriteria(Game_V1_01.class,"u").list();
+			for(Game_V1_01 game : list)
+			{
+				if(game.getCurrentround() <= game.getMaxrounds())
+				{
+					List<User_V1_01> userlist = game.getUserlist();
+					for(User_V1_01 ulist : userlist)
+					{					
+						if(ulist.getId() == id)
+						{
+							return true;
+						}
+					}
+				}
+			}
+
+			Con.getTransaction().commit();
+			System.out.println(new Date()+" || Hibernate: Transaction comited");
+		}catch(RuntimeException e){
+			try{
+				Con.getTransaction().rollback();
+				System.out.println("Rolback");
+			}catch(RuntimeException rbe){
+				//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+			}
+			throw e;
+		}finally{
+			if(Con.getSession()!=null){
+				Con.getSession().close();
+				System.out.println(new Date()+ " || Hibernate: Session Closed");
+				//TODO Log für Hibernate Sessions anlegen
+			}
+		}
+		return false;
+	}
+	
+//===========================openGames========================================================	openGames Game
+		public List<Game_V1_01> openGames()
+		{
+			try{
+				Con.Transaction_Start();
+				Con.getTransaction().setTimeout(10);	
+				
+				List<Game_V1_01> gameList = new ArrayList<Game_V1_01>();
+				List<Game_V1_01> list = Con.getSession().createCriteria(Game_V1_01.class,"u").list();
+				for(Game_V1_01 game : list)
+				{
+					if(!game.isFull())
+					{
+						gameList.add(game);
+					}
+				}
+				
+				
+				Con.getTransaction().commit();
+				System.out.println(new Date()+" || Hibernate: Transaction comited");
+				return  gameList;
+			}catch(RuntimeException e){
+				try{
+					Con.getTransaction().rollback();
+					System.out.println("Rolback");
+				}catch(RuntimeException rbe){
+					//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+				}
+				throw e;
+			}finally{
+				if(Con.getSession()!=null){
+					Con.getSession().close();
+					System.out.println(new Date()+ " || Hibernate: Session Closed");
+					//TODO Log für Hibernate Sessions anlegen
+				}
+			}
+		}
+//===========================activeGames=======================================================	activeGames Game
+		public List<Game_V1_01> activeGames()
+		{
+			try{
+				Con.Transaction_Start();
+				Con.getTransaction().setTimeout(10);	
+
+				List<Game_V1_01> gameList = new ArrayList<Game_V1_01>();
+				List<Game_V1_01> list = Con.getSession().createCriteria(Game_V1_01.class,"u").list();
+				for(Game_V1_01 game : list)
+				{
+					if(game.isFull())
+					{
+						gameList.add(game);
+					}
+				}	
+				
+				Con.getTransaction().commit();
+				System.out.println(new Date()+" || Hibernate: Transaction comited");
+				return  gameList;
+			}catch(RuntimeException e){
+				try{
+					Con.getTransaction().rollback();
+					System.out.println("Rolback");
+				}catch(RuntimeException rbe){
+					//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+				}
+				throw e;
+			}finally{
+				if(Con.getSession()!=null){
+					Con.getSession().close();
+					System.out.println(new Date()+ " || Hibernate: Session Closed");
+					//TODO Log für Hibernate Sessions anlegen
+				}
+			}
+		}
+}

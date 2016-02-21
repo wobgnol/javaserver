@@ -1,0 +1,7 @@
+INSERT INTO user_v1_01 VALUES(1,"admin","admin");
+INSERT INTO tomcatuserroles_v1_01 VALUES(1,"manager-gui");
+INSERT INTO tomcatuserroles_v1_01 VALUES(2,"admin");
+INSERT INTO tomcatuserroles_v1_01 VALUES(3,"player");
+UPDATE tomcatuserroles_v1_01_pk SET next_val=4;
+UPDATE user_v1_01_pk SET next_val=2;
+INSERT INTO user_v1_01_tomcatuserroles_v1_01 VALUES(1,1);

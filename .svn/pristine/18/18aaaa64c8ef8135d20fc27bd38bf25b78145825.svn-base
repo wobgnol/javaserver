@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE hibernate-configuration SYSTEM 
+"http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+
+<hibernate-configuration>
+	<session-factory>
+<!-- hibernate zu postgresSQL inc JDBC || User PW -->
+<!-- 		<property name="hibernate.dialect">org.hibernate.dialect.ProgressDialect</property> -->
+<!-- 		<property name="hibernate.connection.driver_class">org.postgresql.Driver</property> -->
+<!-- 		<property name="hibernate.connection.url">jdbc:postgresql://localhost:5432/ina1P5_P6</property> -->
+
+<!-- hibernate zu MySQL inc JDBC || User PW -->
+		<property name="dialect">org.hibernate.dialect.MySQLDialect</property>
+		<property name="hibernate.connection.driver_class">com.mysql.jdbc.Driver</property>
+		<property name="hibernate.connection.url">jdbc:mysql://localhost:3306/moaiosbeer</property>		<!-- Anpassen! -->
+		<property name="hibernate.connection.username">moaiosadmin</property>								<!-- Anpassen! -->
+		<property name="hibernate.connection.password">moaiosadmin123</property>								<!-- Anpassen! -->
+		<!-- hibernate zu postgresSQL inc JDBC || User PW -->
+		<property name="connection.pool_size">1000</property>
+		
+		<!-- Disable the second level chache -->
+		<property name="cache.provider_class">org.hibernate.cache.NoCacheProvider</property>
+		<!-- optionen create validate ... -->
+		<!-- optionen:
+						validate: validate the schema, makes no changes to the database.
+    					update: update the schema.
+   			 			create: creates the schema, destroying previous data.
+    					create-drop: drop the schema at the end of the session.  -->
+		<property name="hbm2ddl.auto">create</property><!-- Anpassen! Nachher validate -->
+		<!-- <property name="hbm2ddl.auto">create</property> -->
+		
+		<!-- sql auf stdout printen -->
+		<property name="show_sql">true</property>
+		
+<!-- 	 List of XML mapping files 				 -->
+			<!-- Mapping der java beans ===================    Start -->
+			<!-- User_V1_01.java -->	
+		  	<mapping class="de.moaiosbeer.db.models.User_V1_01"/>
+			<!-- Game_V1_01.java -->
+		  	<!--  <mapping class="de.moaiosbeer.beans.Game_V1_01"/> -->
+		  	<!-- TomcatUserRoles_V1_01.java -->
+		  	<mapping class="de.moaiosbeer.db.models.TomcatUserRoles_V1_01"/>
+		  	
+		  	<!-- Mapping BeerGame.PlaysheetTable -->
+		  	<mapping class="de.moaiosbeer.db.models.Playsheet_V1_01"/>
+		  	<!-- Mapping BeerGame.GameTable -->
+		  	<mapping class="de.moaiosbeer.db.models.Game_V1_01"/>
+		  	
+			<!-- Mapping Student zu Certification => de.moaiosbeer.hibernate_examples.manytomany 
+		 	<mapping class="de.moaiosbeer.hibernate_examples.manytomany.Student"/>
+			<mapping class="de.moaiosbeer.hibernate_examples.manytomany.StudentCertification"/>
+			For tests: toggle comment-->
+
+<!-- 		<mapping resource="Employee.hbm.xml" /> -->
+
+	</session-factory>
+</hibernate-configuration>

@@ -1,0 +1,83 @@
+package de.moaiosbeer.db.models;
+
+import java.util.List;
+
+public class BeerGameFactory {
+
+	// Factory Methoden für die Klasse: 	Game_V1_01		-----------------Start 
+	/**
+	 * Erstellt eine Inztanz der Klasse Game_V1_01 mit standart Konstrucktor
+	 * @return Giebt eine Inztanz der Klasse Game_V1_01 zurück.
+	 */
+	public Game_V1_01 gameFactory() {
+		Game_V1_01 NewGame = new Game_V1_01();
+		return NewGame;
+	}
+	
+	/**
+	 * Erstellt eine Inztanz der Klasse Game_V1_01 anhand eines Parameters: (ArrayList<User_V1_01>)
+	 * @return Giebt eine Inztanz der Klasse Game_V1_01 mit bereits beschriebenen Attribut: List<User_V1_01> playerlist zurück
+	 */
+	public Game_V1_01 gameFactory(List<User_V1_01> userlist) {
+		Game_V1_01 NewGame = new Game_V1_01(userlist);
+		return NewGame;
+	}
+	
+	// Factory Methoden für die Klasse: 	Game_V1_01		-----------------Ende 
+	
+	
+	
+	// Factory Methoden für die Klasse: 	User_V1_01		-----------------Start 
+	/**
+	 * Erstellt eine Inztanz der Klasse User_V1_01 mit standart Konstrucktor
+	 * @return Giebt eine Inztanz der Klasse User_V1_01 zurück.
+	 */
+	public User_V1_01 userFactory() { 
+		User_V1_01 NewUser = new User_V1_01();
+		return NewUser;
+	 }
+	
+	/**
+	 * Erstellt eine Inztanz der Klasse User_V1_01 anhand der String Parameter: (usernames , password) 
+	 * @return Giebt eine Inztanz der Klasse User_V1_01 mit beschreibenen Attrubuten: username und password zurück.
+	 */
+	public User_V1_01 userFactory(String username,String password) { 
+		User_V1_01 NewUser = new User_V1_01(username,password);
+		return NewUser;
+	 }
+	
+	// Factory Methoden für die Klasse: 	User_V1_01		-----------------Ende 
+	
+	
+	// Factory Methoden für die Klasse: 	Playsheet_V1_01		-----------------Start 
+	/**
+	 * Erstellt eine Inztanz der Klasse Playsheet_V1_01 mit standart Konstrucktor
+	 * @return Giebt eine Inztanz der Klasse Playsheet_V1_01 zurück:
+	 */
+	public Playsheet_V1_01 playsheetFactory() { 
+		Playsheet_V1_01 NewPlaysheet = new Playsheet_V1_01();
+		return NewPlaysheet;
+	 }
+	
+	/**
+	 * Erstellt eine Inztanz der Klasse Playsheet_V1_01 anhand der Long Parameter: (ownerID , gameID)
+	 * @return Giebt eine Inztanz der Klasse Playsheet_V1_01 im initialisierten Zustand zurück:
+	 * 
+	 * 			owner = ownerID;
+	 *			gameid = gameID;
+	 *			inventory = 5; 	
+	 *			incoming = 0; 		
+	 *			round = 1;			
+	 *			backorder = 0;		
+	 *			ourorder = 0;		
+	 *			neworder = 0;
+	 *			totalcosts =0;	
+	 */
+	public Playsheet_V1_01 playsheetFactory(User_V1_01 owner, String role) { 
+		Playsheet_V1_01 NewPlaysheet = new Playsheet_V1_01(owner, role);
+		return NewPlaysheet;
+	 }
+
+	// Factory Methoden für die Klasse: 	Playsheet_V1_01		-----------------Ende 
+	
+}

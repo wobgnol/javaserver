@@ -1,0 +1,126 @@
+package de.moaiosbeer.controllers;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import de.moaiosbeer.helper.SessionOwner;
+
+/**
+ * Servlet implementation class SessionController
+ */
+@WebServlet("/SessionController")
+public class SessionController extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public SessionController() {
+        super();
+        // TODO Auto-generated constructor stub
+    }
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		 
+		PrintWriter out = response.getWriter(); 	// Zum Debugging einkommentieren
+		// login parameter aus dem Request holen 
+		String username = request.getParameter("username");
+		String password = request.getParameter("password");
+		/*!!!!!! WICHTIG AUS DER API BESCHREIBUNG ENTNOMMEN !!!!!!!!!!!
+		 * A) getSession(true) will check whether a session already exists for the user. If yes, 
+		 * 	 it will return that session object else it will create a new session object and return it.
+		 * 
+		 *B) getSession(false) will check existence of session. If session exists, 
+		 *   then it returns the reference of that session object, if not, this methods will return null.
+		 * */
+		// überschreibt das neue Session objekt entweder mit null oder einer vorhanden Session
+		HttpSession session = request.getSession(false); // giebt null zurück oder die Session
+		SessionOwner owner = new SessionOwner(); // neuen Sitzungsbesitzer anlegen ^^
+		
+		if(session == null){// User ohne Session------------------------------------------------------start
+			/* Die Session ist null der User hatte keine aktuelle Sitzung 
+			 * => neu angelegte weiter verwenden und überschreiben*/
+			
+			/*validateFactory(username,password),
+			 *validiert ob die username/password Kompi im System vorhanden ist.
+			 *Desweiteren giebt sie immer eine initialisierte Inztans eines SessionOwners zurück.
+			 * 
+			 *Folgende Felder werden übeschrieben:
+			 *A)Valider Nutzer: 
+			 *	=> nextTargetUrl = "/gamelist.jsp",name="username",serverResponse="Statuscode" 
+			 *
+			 *B)nicht Valider Nutzer: 	
+			 *	=> nextTargetUrl= "/login.jsp",name="username"serverResponse="Statuscode" 
+			 *
+			 *die restlichenFelder werden auf null bzw 0 gesetzt */
+			owner = owner.validateFactory(username, password);
+			out.println(owner.toString());
+			
+			//--------------Valider User im System ohne Session---------------------------------------Start
+			/* wenn es ein User im System ist, 
+			 * und keine Session besitzt dann:*/
+			if(owner.getIsValidUser() == true){ 
+					out.println(owner.getIsValidUser());
+					//weise ihm eine neue session zu
+					session = request.getSession(true);	// Giebt alte session zurück oder erstellt neue
+					//Session id übergeben
+					owner.setSessionID(session.getId());
+					// der session die owner Instanz hinzufügen
+					session.setAttribute("sessionOwner", owner);
+			
+					// out.println(owner.getNextTargetURL()); // Debug Zeile für owner attribute
+					String nextTarget = owner.getNextTargetURL();
+					/*Dispatch to => a) Valider nutzer ohne Session => /gamelist.jsp*/
+					RequestDispatcher rd = getServletContext().getRequestDispatcher(nextTarget);
+					// Request forwarding ( weiterleitung )
+					rd.forward(request, response);
+					return;
+			}//--------------Valider User im System ohne Session---------------------------------------Ende
+			//--------------!NICHT! Valider User im System ohne Sessionn-------------------------------Start
+			
+			/* damit der User seine Fehleingabe 
+			 * korrigieren kann wird diese zurück gesendet zum login*/
+			request.setAttribute("username", username);
+			request.setAttribute("password", password);
+			response.setStatus(owner.getServerResponse().getStatus());
+			// out.println(owner.getNextTargetURL()); // Debug Zeile für owner attribute
+			String nextTarget = owner.getNextTargetURL();
+			/*Dispatch to => b) NICHT Valider nutzer ohne Session => /login.jsp*/
+			RequestDispatcher rd = getServletContext().getRequestDispatcher(nextTarget);
+			// Request forwarding ( weiterleitung )
+			rd.forward(request, response);
+			return;
+			
+			//--------------!NICHT! Valider User im System ohne Sessionn-------------------------------Ende
+		}//User ohne Session--------------------------------------------------------------------------Ende
+		
+		
+		else {
+			
+			// alte Session behalten
+			// Redirect zum alten Spiel
+		}
+		
+		
+	}
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		doGet(request, response);
+	}
+
+}

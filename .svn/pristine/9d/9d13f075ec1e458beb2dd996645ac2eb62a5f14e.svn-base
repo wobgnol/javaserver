@@ -1,0 +1,264 @@
+package de.moaiosbeer.dao;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Scanner;
+
+import org.hibernate.criterion.Restrictions;
+
+import de.moaiosbeer.db.models.User_V1_01;
+import de.moaiosbeer.hibernate.Hib_DB_Conn_V1_01;
+public class User_V1_01_DaO {
+
+// Private inztanz des Verbindungshelfers	
+private Hib_DB_Conn_V1_01 Con = new Hib_DB_Conn_V1_01();
+
+private Scanner sc = new Scanner(System.in);
+
+protected Long user_id;
+private String username;
+private String password;
+
+public User_V1_01 getUser(long userid) throws Exception
+{
+	try{
+		// Session und Transaktion starten
+		Con.Transaction_Start();
+		// Timeout der Transaktion setzen
+		Con.getTransaction().setTimeout(10);
+		
+		//DB Abfrage mit Hibernate starten alle Tabellen einträge von User
+		List<User_V1_01> list = Con.getSession().createCriteria(User_V1_01.class).add(Restrictions.eq("id", userid)).list();
+		
+		// Transaktion abschließen
+		Con.getTransaction().commit();
+		System.out.println(new Date()+" || Hibernate: Transaction comited");
+		
+		if(list.size()==1)
+		{
+			return list.get(0);
+		}
+		throw new Exception("Kein Benutzer mit der angegeben ID vorhanden");
+		
+	}catch(RuntimeException e){
+		try{
+			Con.getTransaction().rollback();
+
+			System.out.println("Rolback");
+		}catch(RuntimeException rbe){
+			//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+		}
+		throw e;
+	}finally{
+		if(Con.getSession()!=null){
+			Con.getSession().close();
+			System.out.println(new Date()+ " || Hibernate: Session Closed");
+			//TODO Log für Hibernate Sessions anlegen
+		}
+	}
+	//abschicken
+	
+	//Response.Count == 1
+	//True -> 
+	//return false;//Response.LoggedIn
+			
+	//False -> throw new Exception("Bennutzername und/oder Passwort falsch!");		
+}
+
+/**
+ * Giebt alle User_V1_01 beans aus der DB als Liste zurück
+ * @return Lise von Benutzern in der DB
+ */
+public List<User_V1_01> getAllUsers(){
+	
+	try{
+		// Session und Transaktion starten
+		Con.Transaction_Start();
+		// Timeout der Transaktion setzen
+		Con.getTransaction().setTimeout(10);
+		
+		//DB Abfrage mit Hibernate starten alle Tabellen einträge von User
+		List<User_V1_01> list = Con.getSession().createCriteria(User_V1_01.class,"u").list();
+		
+		
+		// Transaktion abschließen
+		Con.getTransaction().commit();
+		System.out.println(new Date()+" || Hibernate: Transaction comited");
+		//req.getSession().invalidate();
+		
+		return list;
+		
+	// return user_chain ;
+	}catch(RuntimeException e){
+		try{
+			Con.getTransaction().rollback();
+		
+
+			System.out.println("Rolback");
+		}catch(RuntimeException rbe){
+			//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+		}
+		throw e;
+	}finally{
+		if(Con.getSession()!=null){
+			Con.getSession().close();
+			System.out.println(new Date()+ " || Hibernate: Session Closed");
+			//TODO Log für Hibernate Sessions anlegen
+		}
+	}
+			
+}
+
+//TODO User erstellen -> Methode user übernehmen -> public fehlerliste 
+//=======================NEW=============================================================	NEW User
+public void newUser(User_V1_01 user)
+{
+	/*
+	 Programmablauf:
+	 User entgegennehmen und Validieren.=> Unique Exceptionhandling(Eigene Funktion).
+	 Beim Fehler Fehlerliste überschreiben -> sonst Fehlermeldung
+	 */
+	try{
+		Con.Transaction_Start();
+		Con.getTransaction().setTimeout(10);	
+
+//		//Eingabe User
+//	    System.out.print("Username: ");
+//	    username = sc.next();
+//		//Eingabe Passwort
+//		System.out.print("Password: ");
+//		password = sc.next();
+//		User_V1_01 u = new User_V1_01(username, password);
+		Con.getSession().save(user);
+//		
+//		Con.getSession().createQuery(
+//		          "INSERT INTO User_V1_01 "
+//		          + "VALUES('"+ password + "'" + ", '"+ username+ "');").iterate();
+
+		Con.getTransaction().commit();
+		System.out.println(new Date()+" || Hibernate: Transaction comited");
+	}catch(RuntimeException e){
+		try{
+			Con.getTransaction().rollback();
+			System.out.println("Rolback");
+		}catch(RuntimeException rbe){
+			//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+		}
+		throw e;
+	}finally{
+		if(Con.getSession()!=null){
+			Con.getSession().close();
+			System.out.println(new Date()+ " || Hibernate: Session Closed");
+			//TODO Log für Hibernate Sessions anlegen
+		}
+	}
+}
+
+//TODO User ändern
+//=======================UPDATE==========================================================	UPDATE User
+public void updateUser(User_V1_01 user)
+{
+	try{
+		Con.Transaction_Start();
+		Con.getTransaction().setTimeout(10);	
+
+		Con.getSession().update(user);
+		
+//		Con.getSession().createQuery(
+//		          "Update User_V1_01 "
+//		          + "Set username = '"+ username + "'" + ", password = '"+ password + "'"
+//		          + "Where id = '"+ user_id + "' ;" ).iterate();
+
+		Con.getTransaction().commit();
+		System.out.println(new Date()+" || Hibernate: Transaction comited");
+	}catch(RuntimeException e){
+		try{
+			Con.getTransaction().rollback();
+			System.out.println("Rolback");
+		}catch(RuntimeException rbe){
+			//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+		}
+		throw e;
+	}finally{
+		if(Con.getSession()!=null){
+			Con.getSession().close();
+			System.out.println(new Date()+ " || Hibernate: Session Closed");
+			//TODO Log für Hibernate Sessions anlegen
+		}
+	}
+}
+
+//TODO User löschen
+//=======================DELETE==========================================================	DELETE User
+public void deleteUser(User_V1_01 user)
+{
+	try{
+		Con.Transaction_Start();
+		Con.getTransaction().setTimeout(10);	
+
+		Con.getSession().delete(user);
+		
+//		Con.getSession().createQuery(
+//		          "Delete From User_V1_01 "
+//		          + "Where id = '"+ user_id + "'" ).iterate();
+
+		Con.getTransaction().commit();
+		System.out.println(new Date()+" || Hibernate: Transaction comited");
+	}catch(RuntimeException e){
+		try{
+			Con.getTransaction().rollback();
+			System.out.println("Rolback");
+		}catch(RuntimeException rbe){
+			//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+		}
+		throw e;
+	}finally{
+		if(Con.getSession()!=null){
+			Con.getSession().close();
+			System.out.println(new Date()+ " || Hibernate: Session Closed");
+			//TODO Log für Hibernate Sessions anlegen
+		}
+	}
+}
+
+//=======================IS================================================================	IS User
+public Long isUser(String user, String passw)
+{
+	try{
+		Con.Transaction_Start();
+		Con.getTransaction().setTimeout(10);	
+		
+		List<User_V1_01> list = Con.getSession().createCriteria(User_V1_01.class,"u").list();
+		for (User_V1_01 userList : list)
+		{
+			if(userList.getUsername().equals(user))
+			{
+				if(userList.getPassword().equals(passw))
+				{
+					return userList.getId();
+				}
+			}
+		}
+
+		Con.getTransaction().commit();
+		System.out.println(new Date()+" || Hibernate: Transaction comited");
+		return null;
+	}catch(RuntimeException e){
+		try{
+			Con.getTransaction().rollback();
+			System.out.println("Rolback");
+		}catch(RuntimeException rbe){
+			//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+		}
+		throw e;
+	}finally{
+		if(Con.getSession()!=null){
+			Con.getSession().close();
+			System.out.println(new Date()+ " || Hibernate: Session Closed");
+			//TODO Log für Hibernate Sessions anlegen
+		}
+	}
+
+}
+
+}

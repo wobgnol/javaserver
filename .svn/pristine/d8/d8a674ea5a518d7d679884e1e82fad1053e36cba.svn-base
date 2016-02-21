@@ -1,0 +1,328 @@
+/*
+*************************************************************************
+* 21.12.2015 															*
+* Copyright © 2015-2016 Tim Langenbrink, Stephan Wissing, 				*
+* 						Jonas Klein-Hitpaß 								*
+*************************************************************************
+* 																		*
+* Autor 	   : Tim Langenbrink 										*
+* Company 	   : / 														*
+* File-Name    : GameController.java 									*
+* Beschreibung : Diese Klasse wird verwendet um den Spielfluss von		*
+* 				 "The Beer Game" zu kontrollieren. Hierfür werden		*
+* 				 von den aufrufenden Klassen/URLs die gewünschte		*
+* 				 Aktion mitgeteilt, der User welche diese ausführen		*
+* 				 möchte und auf welches Spiel diese angewandt werden	*
+* 			     soll.													*
+* 																		*
+*************************************************************************
+*/
+
+package de.moaiosbeer.controllers;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
+
+import de.moaiosbeer.dao.Game_V1_01_DaO;
+import de.moaiosbeer.dao.User_V1_01_DaO;
+import de.moaiosbeer.db.models.Game_V1_01;
+import de.moaiosbeer.db.models.User_V1_01;
+import de.moaiosbeer.helper.GameClosedException;
+import de.moaiosbeer.helper.RequestConstants;
+import de.moaiosbeer.helper.SessionOwner;
+
+/**
+ * Diese Klasse wird verwendet um den Spielfluss von "The Beer Game" zu kontrollieren.
+ */
+@WebServlet("/GameController")
+public class GameController extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+
+	private User_V1_01_DaO udao = new User_V1_01_DaO();
+	private Game_V1_01_DaO gdao = new Game_V1_01_DaO();
+	
+	private HashMap<Long, Game_V1_01> games = new HashMap<Long, Game_V1_01>();
+	List<User_V1_01> userlist = new ArrayList<User_V1_01>();
+	
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public GameController() {
+        super();
+        List<Game_V1_01> gamelist = gdao.activeGames();
+        for(Game_V1_01 tempgame : gamelist)
+        {
+        	games.put(tempgame.getId(), tempgame);
+        }
+        
+        gamelist = gdao.openGames();
+        for(Game_V1_01 tempgame : gamelist)
+        {
+        	games.put(tempgame.getId(), tempgame);
+        }
+    }
+
+	/**
+	 * Diese Funktion nimmt die Anfragen von anderen Klassen/URLs entgegen und führt die
+	 * gewünschte Funktion aus, unter Berücksigtigung von eventuell vorhandenen Kriterien
+	 * 
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		PrintWriter out = response.getWriter();
+		SessionOwner owner = (SessionOwner) request.getSession().getAttribute(RequestConstants.ATTR_SESSION_OWNER);
+		out.println("Check if User has valid Session...");
+		if(owner.getSessionID() == null)
+		{
+			out.println("failed</br>");
+			owner.setNextTargetURL("/login.jsp");
+			request.getSession().setAttribute(RequestConstants.ATTR_SESSION_OWNER,owner);
+			RequestDispatcher rd = getServletContext().getRequestDispatcher(owner.getNextTargetURL());
+			rd.forward(request, response);
+			response.getWriter().write("Please Login");
+			return;
+		}
+		out.println("done</br>");
+		long userid = owner.getOwnerID();
+		String mode = owner.getUserAktion();
+		
+		if(mode.equals(RequestConstants.MODE_CREATE))
+		{
+			out.print("Mode: Spiel erstellen</br>");
+			out.println("Search for correct user...");
+			Game_V1_01 game = new Game_V1_01();
+			for(User_V1_01 user : userlist)
+			{
+				if(user.getId() == userid)
+				{
+					out.println("done</br>");
+					try {
+						out.println("Add player to Game...");
+						game.addPlayer(user);
+						out.println("done</br>");
+						out.println("Set Gamename...");
+						game.setGamename(user.getUsername());
+						out.println("done</br>");
+					} catch (Exception e) {
+						out.println("failed</br>");
+						out.println("500");
+						Response.status(500).build();
+						return;
+					}
+					break;
+				}
+			}
+			if(game.getUserlist().size()==1)
+			{
+				try
+				{
+					out.println("Write game to DB...");
+					gdao.newGame(game);
+					out.println("done</br>");
+					out.println("Add game to intern List...");
+					games.put(game.getId(), game);
+					out.println("done</br>");
+					out.println("Save gameID to session...");
+					owner.setGameID(game.getId());
+					out.println("done</br>");
+					request.getSession().setAttribute(RequestConstants.ATTR_SESSION_OWNER,owner);
+					out.println("201");
+					Response.status(201).build();
+					return;
+				}
+				catch(Exception e)
+				{
+					out.println("failed</br>");
+					//Tue nichts, da im folgenen festgelegt wird, dass was fehlgeschlagen ist
+				}
+			}
+			out.println("500");
+			Response.status(500).build();
+			return;
+		}
+		Long gameID = owner.getGameID();
+		
+		if(mode.equals(RequestConstants.MODE_TURN))
+		{
+			out.print("Mode: Spielzug ausführen</br>");
+			Integer order = Integer.parseInt((String) request.getSession().getAttribute(RequestConstants.ATTR_ORDER));
+			try {
+				out.println("Perform Users turn...");
+				games.get(gameID).performTurn(userid,order);
+				out.println("done</br>");
+				out.println("200");
+				Response.status(200).build();
+			} catch (GameClosedException e) {
+				out.println("failed</br>Game is already Closed</br>");
+				out.println("400");
+				Response.status(400).build();
+			} catch (Exception e) {
+				out.println("failed</br>It's not users turn</br></br>");
+				out.println("401");
+				Response.status(401).build();
+			}
+		}
+		else if(mode.equals(RequestConstants.MODE_JOIN))
+		{
+			out.print("Mode: Spiel beitreten</br>");
+			out.println("Search for correct user...");
+			for(User_V1_01 user : userlist)
+			{
+				if(user.getId() == userid)
+				{
+					out.println("done</br>");
+					try {
+						out.println("Add User to game...");
+						games.get(gameID).addPlayer(user);
+						out.println("done</br>");
+						out.println("Update Game in DB...");
+						gdao.updateGame(games.get(gameID));
+						out.println("done</br>");
+						out.println("Check if game is full...");
+						if(!games.get(gameID).isFull())
+						{
+							out.println("isn't full</br>");
+							owner.setNextTargetURL("/wait4players.jsp");
+						}
+						else if(games.get(gameID).isFull())
+						{
+							out.println("is Full</br>");
+							out.println("Start Game...");
+							games.get(gameID).startGame();
+							out.println("done</br>");
+							owner.setNextTargetURL("/playsheet.jsp");
+						}
+						request.getSession().setAttribute(RequestConstants.ATTR_SESSION_OWNER,owner);
+						RequestDispatcher rd = getServletContext().getRequestDispatcher(owner.getNextTargetURL());
+						rd.forward(request, response);
+						Response.status(200).build();
+						return;
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						//e.printStackTrace();
+						out.println("failed</br>");
+						out.println("500");
+						Response.status(500).build();
+						return;
+					}
+				}
+			}
+			out.println("failed</br>");
+			out.println("500");
+			Response.status(500).build();
+			return;
+		}
+		else if(mode.equals(RequestConstants.MODE_SHOWPLAYSHEET))
+		{
+			out.print("Mode: Playsheet anzeigen</br>");
+			owner.setNextTargetURL("/playsheet.jsp");
+			request.getSession().setAttribute(RequestConstants.ATTR_SESSION_OWNER,owner);
+			RequestDispatcher rd = getServletContext().getRequestDispatcher(owner.getNextTargetURL());
+			rd.forward(request, response);
+			Response.status(200).build();
+			return;
+		}
+		else if(mode.equals(RequestConstants.MODE_SHOWGAME))
+		{
+			out.print("Mode: Spiel anzeigen</br>");
+			out.println("Check if game is full...");
+			if(games.get(gameID).isFull())
+			{
+				out.println("is Full</br>");
+				out.println("Start Game...");
+				games.get(gameID).startGame();
+				out.println("done</br>");
+				owner.setNextTargetURL("/playsheet.jsp");
+			}
+			else
+			{
+				out.println("isn't full</br>");
+				owner.setNextTargetURL("/wait4players.jsp");
+			}
+			request.getSession().setAttribute(RequestConstants.ATTR_SESSION_OWNER,owner);
+			RequestDispatcher rd = getServletContext().getRequestDispatcher(owner.getNextTargetURL());
+			rd.forward(request, response);
+			Response.status(200).build();
+			return;
+		}
+		else if(mode.equals(RequestConstants.MODE_POLLING))
+		{
+			out.print("Mode: Polling</br>");
+			try {
+				out.print("Check if it's users turn...");
+				if(userid == games.get(gameID).getActiveUserid())
+				{
+					out.println("done</br>");
+					out.println("200");
+					Response.status(200).build();
+					return;
+				}
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				out.println("failed</br>");
+				out.println("500");
+				Response.status(500).build();
+				return;
+			}
+			out.println("failed</br>");
+			out.println("401");
+			Response.status(401).build();
+			return;
+		}
+		else if(mode.equals(RequestConstants.MODE_LOGIN))
+		{
+			out.print("Mode: Login</br>");
+			try {
+				out.print("Get User by ID...");
+				User_V1_01 user = udao.getUser(userid);
+				out.println("done</br>");
+				out.print("Add User to List...");
+				userlist.add(user);
+				out.println("done</br>");
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				out.println("failed</br>");
+				out.println("500");
+				Response.status(500).build();
+				return;
+			}
+			out.println("200");
+			Response.status(200).build();
+			return;
+		}
+		else if(mode.equals(RequestConstants.MODE_LOGOUT))
+		{
+			out.print("Mode: Logout</br>");
+			try {
+				out.print("Get User by ID...");
+				User_V1_01 user = udao.getUser(userid);
+				out.println("done</br>");
+				out.print("Remove User to List...");
+				userlist.remove(user);
+				out.println("done</br>");
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				out.println("failed</br>");
+				out.println("500");
+				Response.status(500).build();
+				return;
+			}
+			out.println("200");
+			Response.status(200).build();
+			return;
+		}
+	}
+
+}

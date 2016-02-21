@@ -1,0 +1,106 @@
+package de.moaiosbeer.dao;
+
+import java.util.Date;
+import java.util.List;
+import de.moaiosbeer.db.models.TomcatUserRoles_V1_01;
+import de.moaiosbeer.hibernate.Hib_DB_Conn_V1_01;
+
+public class TomcatUserRoles_V1_01_DaO {
+	
+	private Hib_DB_Conn_V1_01 Con = new Hib_DB_Conn_V1_01();
+	
+	private long role_id;
+	private String rolename;
+	
+//===========================NEW=============================================================	NEW UserRole
+	public List<Fehlerliste> newTomcatUserRole(TomcatUserRoles_V1_01 tomcatUserRoles)
+	{
+		try{
+			Con.Transaction_Start();
+			Con.getTransaction().setTimeout(10);	
+			
+			Con.getSession().createQuery(
+			          "INSERT INTO TomcatUserRoles_V1_01 "
+			          + "VALUES ('"+ role_id + "','"+ rolename+ "');").iterate();
+
+			Con.getTransaction().commit();
+			System.out.println(new Date()+" || Hibernate: Transaction comited");
+		}catch(RuntimeException e){
+			try{
+				Con.getTransaction().rollback();
+				System.out.println("Rolback");
+			}catch(RuntimeException rbe){
+				//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+			}
+			throw e;
+		}finally{
+			if(Con.getSession()!=null){
+				Con.getSession().close();
+				System.out.println(new Date()+ " || Hibernate: Session Closed");
+				//TODO Log für Hibernate Sessions anlegen
+			}
+		}
+		return null;
+	}
+//===========================UPDATE===========================================================	UPDATE UserRole
+	public List<Fehlerliste> updateTomcatUserRole(TomcatUserRoles_V1_01 tomcatUserRoles)
+	{
+		try{
+			Con.Transaction_Start();
+			Con.getTransaction().setTimeout(10);	
+			
+			Con.getSession().createQuery(
+			          "UPDATE TomcatUserRoles_V1_01 "
+			          + "SET  role_id = '"+ role_id + "', rolename = '"+ rolename + "');").iterate();
+
+			Con.getTransaction().commit();
+			System.out.println(new Date()+" || Hibernate: Transaction comited");
+		}catch(RuntimeException e){
+			try{
+				Con.getTransaction().rollback();
+				System.out.println("Rolback");
+			}catch(RuntimeException rbe){
+				//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+			}
+			throw e;
+		}finally{
+			if(Con.getSession()!=null){
+				Con.getSession().close();
+				System.out.println(new Date()+ " || Hibernate: Session Closed");
+				//TODO Log für Hibernate Sessions anlegen
+			}
+		}
+		return null;
+	}
+//===========================DELETE==========================================================	DELETE UserRole
+	public List<Fehlerliste> deleteTomcatUserRole(TomcatUserRoles_V1_01 tomcatUserRoles)
+	{
+		try{
+			Con.Transaction_Start();
+			Con.getTransaction().setTimeout(10);	
+			
+			Con.getSession().createQuery(
+			          "DELETE FROM TomcatUserRoles_V1_01 "
+			          + "WHERE role_id = '"+ role_id + "');").iterate();
+
+			Con.getTransaction().commit();
+			System.out.println(new Date()+" || Hibernate: Transaction comited");
+		}catch(RuntimeException e){
+			try{
+				Con.getTransaction().rollback();
+				System.out.println("Rolback");
+			}catch(RuntimeException rbe){
+				//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+			}
+			throw e;
+		}finally{
+			if(Con.getSession()!=null){
+				Con.getSession().close();
+				System.out.println(new Date()+ " || Hibernate: Session Closed");
+				//TODO Log für Hibernate Sessions anlegen
+			}
+		}
+		return null;
+	}
+
+}

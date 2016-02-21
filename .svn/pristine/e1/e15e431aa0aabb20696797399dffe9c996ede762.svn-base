@@ -1,0 +1,269 @@
+package de.moaiosbeer.rest_api;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import com.sun.jersey.core.util.Base64;
+
+import de.moaiosbeer.dao.Game_V1_01_DaO;
+import de.moaiosbeer.dao.User_V1_01_DaO;
+import de.moaiosbeer.db.models.Game_V1_01;
+import de.moaiosbeer.db.models.Playsheet_V1_01;
+import de.moaiosbeer.db.models.User_V1_01;
+import de.moaiosbeer.helper.MoaHttpClient;
+import de.moaiosbeer.helper.SessionOwner;
+
+
+@Path("v1.01/users")
+public class ApiUser_V1_01 {
+	
+	/**Dieser Api Pfad [ ./rest/v1.01/users ] ist für den Admin gedacht,
+	 * er giebt alle User im System als Json Array von User-Objekten zurück.
+	 *
+	 * @return Json Array von User-Objekten der Form: 
+	 * [
+	 * 		{
+	 * 			"id": 1,
+	 * 			"username": "Ein Username",
+	 * 			"password": "XXXXX",
+	 * 			"roles": 	[
+	 * 							{
+	 * 								"role_id": 1,
+	 * 								"rolename": "manager-gui"
+	 * 							},
+	 * 							{
+	 * 								"role_id": 2,
+	 * 								"rolename": "admin"
+	 * 							},
+	 * 							{...weitere Rollen eines Users...}
+	 * 					 	]
+	 * 		},
+	 * 		...... weitere User-Objekte ...
+	 * ]
+     */
+	@GET
+	@RolesAllowed({"admin"}) 
+	//@Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	@Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	public List<User_V1_01> get_AllUsers(){
+	// Inztanz der User DataAccesObjects	
+	User_V1_01_DaO UserAccesObject = new User_V1_01_DaO();
+	// giebt alle User_V1_01 aus der Datenbank zurück.
+	return UserAccesObject.getAllUsers();
+	}
+	
+	/**Dieser Api Pfad [ ./rest/v1.01/users/user/by-token/{authToken} ] ist für den Admin gedacht. 
+	 * Hier kann ein Username und Password via Auth Token erhalten werden	 
+	 * @return Json Objekt {"password": "XXXXX", "username": "Ein User"}*/
+	@GET
+	@RolesAllowed({"admin"}) 
+	@Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	@Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	@Path("user/by-token/{auth}")
+	public Response decodeAuthTokenString(@PathParam("auth") String auth){
+		// Http clienten anlegen 
+		MoaHttpClient client = new MoaHttpClient();	
+		//Hashmap<String K,String V> => username und password
+		HashMap<String,String>  username_password = new HashMap<String,String>();
+		/*String(username:password) am : Splitten und in Hashmap ablegen */
+		username_password = client.getDecodedAuthString(auth);
+		// Server ANtwort schreiben 
+		return Response.status(200).entity(username_password).build();  		
+	}
+	
+	
+	/**Dieser Api Pfad [ ./rest/v1.01/users/user/by-id/{id} ] ist für den Admin gedacht. 
+	 * Hier kann der Admin ein User-Objekt anhand einer UserID erhalten.	 
+	 * @return Json Objekt eines Users der Form:
+	 * {
+	 * 	"id": 1,
+	 * 	"username": "Ein Username",
+	 * 	"password": "XXXXX",
+	 * 	"roles": 	[
+	 * 					{
+	 * 						"role_id": 1,
+	 * 						"rolename": "manager-gui"
+	 * 					},
+	 * 					{
+	 * 						"role_id": 2,
+	 * 						"rolename": "admin"
+	 * 					},
+	 * 					{...weitere Rollen eines Users...}
+	 * 				]
+	 * } 
+	 *  */
+	@GET
+	@RolesAllowed({"admin"}) 
+	//@Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	@Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	@Path("/user/by-id/{id}")
+	public Response getUserByID(@PathParam("id") long id){
+		// Inztanz der User DataAccesObjects	
+		User_V1_01_DaO UserAccesObject = new User_V1_01_DaO();
+		// giebt alle User_V1_01 aus der Datenbank zurück.
+		try {
+			return Response.status(200).entity(UserAccesObject.getUser(id)).build();  
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return Response.status(500).build();  
+		}	
+	}
+	
+
+	/**Dieser Api Pfad [ ./rest/v1.01/users/{auth}/user ] ist für den Admin,player und den manager-gui gedacht. 
+	 * Hier kann eine UserID anhand des AuthTokens ermittelt werden.	 
+	 * @return Json Objekt einer UserID der Form: { "id": 1 }*/
+	@GET
+	@RolesAllowed({"admin","manager-gui","player"}) 
+	@Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	@Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	@Path("/{auth}/user-id")
+	public Response getUserIdByAuthToken(@PathParam("auth") String auth){
+		/*Hashmap<String key,Long value> anlegen
+		 * Dieses objekt wird als Json zum clienten gesendet (hier noch Leer => {})*/ 
+		HashMap<String,Long>  userID = new HashMap<String,Long>();
+		// Inztanz der User DataAccesObjects	
+		User_V1_01_DaO UserAccesObject = new User_V1_01_DaO();
+		// User id anhand authToken ermitteln
+		userID.put("id", UserAccesObject.getUserIdByAuthToken(auth)); // => { "id": EinLong }
+		// Server Antwort schreiben Http 200 ok + entity = HashMap<"id",eineLongUserId>
+		return Response.status(200).entity(userID).build();  	
+	}
+	
+	
+	/**Dieser Api Pfad [ ./rest/v1.01/users/{auth}/games ] ist für den Admin,player und den manager-gui gedacht. 
+	 * Hier kann eine ein Json Array von GameDetail-objekten via http-get anhand des Auth-Tokens ermittelt werden.	 
+	 * @return Json Objekt einer UserID der Form: { "id": 1 }*/
+	@GET
+	@RolesAllowed({"admin","user","manager-gui"}) 
+	@Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	@Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	@Path("/{auth}/games")
+	public Response getGameIdByUserId(@PathParam("auth") String auth){
+		try {
+		/* Userdao anlegen um die userid eines nutzers anhand des AuthTokens zu finden*/
+		User_V1_01_DaO Userdao = new User_V1_01_DaO();
+		// Userid anhand des Tokens ermitteln
+		Long userID = Userdao.getUserIdByAuthToken(auth);
+		
+		// GameDao Instanzieren
+		Game_V1_01_DaO gameDao = new Game_V1_01_DaO();
+		List<Game_V1_01> games = gameDao.GetGamesByUserToken(auth);
+		// Liste aller MeinerSpiel Details
+		List<HashMap<String, Object>> myGameDetails = new ArrayList<HashMap<String,Object>>();
+		for (Game_V1_01 g : games ){
+			HashMap<String, Object> oneGame = new HashMap<String,Object>();
+			oneGame.put("GameId", g.getId());
+			oneGame.put("GameName", g.getGamename());
+			// die Spielerliste holen und durchlaufen
+			for (Playsheet_V1_01 p:  g.getPlaysheets()){
+				// ist die ID eines Spielers meine:
+				if (p.getOwner_id() == userID){
+					// Hol die Role => ab in die Hashmap 
+					oneGame.put("MyRole", p.getGamerole());
+					break;
+				}
+			}
+			// Die Spielerliste ist Kleiner als 4 => state = 0
+			if(g.getUserlist().size()<4){
+				int state = 0;
+				oneGame.put("State", state);
+			}// bin nicht Ich der Active User => state = 1
+			else if (g.getActiveUserid() != userID){
+				int state  = 1;
+				oneGame.put("State", state);
+			}// bin Ich der Active User => state = 2
+			else if (g.getActiveUserid() != userID){
+				int state  = 2;
+				oneGame.put("State", state);
+			}
+			// Aktuellerunde > maxrounds => state = 3
+			else if (g.getCurrentround()> g.getMaxrounds()){
+				int state  = 3;
+				oneGame.put("State", state);
+			}	
+			// Die Hashmap der Liste Anfügen
+			myGameDetails.add(oneGame);
+		}
+		// Server Antwort schreiben Http 200 ok + entity = Gamelist der Spiele
+		return Response.status(200).entity(myGameDetails).build();  
+		} catch (Exception e) {
+			e.printStackTrace();
+			return Response.status(500).build();
+		}
+	}
+	
+
+
+	  
+	  @POST
+	  @RolesAllowed({"admin","user","manager-gui","register"})
+	  @Produces(MediaType.APPLICATION_JSON)
+	  @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	  @Path("/{auth}/new")
+	  public Response newUser_V1_01(@PathParam("auth") String auth) {
+		  	MoaHttpClient client = new MoaHttpClient();
+			// HasMap für username Password decoding 
+			HashMap<String,String>  username_password = new HashMap<String,String>();
+			/*String(username:password) am : Splitten und in Hashmap ablegen */
+			username_password = client.getDecodedAuthString(auth);
+			// den Clienten initialisieren
+			String username = username_password.get("username"); 	// username decoing aus Auth String
+			String password = username_password.get("password");  // password decoding aus Auth String
+			// UserDao anlegen
+			User_V1_01_DaO userDaO = new User_V1_01_DaO();
+			if (userDaO.isUser(username, password)== null){// User gab es noch nicht
+				// leeren User anlegen
+				User_V1_01 user = new User_V1_01(username,password);
+				// neunen Nutzer anlegen
+				userDaO.newUser(user);
+				// status 201 created senden
+				return Response.status(201).build();
+			}
+			else // 406 Not Acceptable
+				return Response.status(406).entity("Change Username").build();
+	
+	  }
+	  
+	 /* Put und Post Example  
+	  
+	  @PUT
+	  @RolesAllowed({"admin","user","manager-gui"}) 
+	  @Consumes(MediaType.APPLICATION_JSON)
+	  @Produces(MediaType.APPLICATION_JSON)
+	  public Response putUser_V1_01_json(User_V1_01 user) {
+		  
+		  String result = "User.json send from hhtpPost: id=\""
+				  + user.getId()+"\" username=\""+user.getId()+"\" password=\"" +user.getPassword()+"\"";
+				return Response.status(201).entity(result).build();
+	  }
+	  
+	  
+	  @POST
+	  @RolesAllowed({"admin","user","manager-gui"}) 
+	  @Consumes(MediaType.APPLICATION_JSON)
+	  @Produces(MediaType.APPLICATION_JSON)
+	  public Response postUser_V1_01_json(User_V1_01 user) {
+		  
+		  String result = "User.json send from hhtpPost: id=\""
+				  + user.getId()+"\" username=\""+user.getId()+"\" password=\"" +user.getPassword()+"\"";
+				return Response.status(201).entity(result).build();
+	
+	  }
+	  
+	  */
+	  	
+}

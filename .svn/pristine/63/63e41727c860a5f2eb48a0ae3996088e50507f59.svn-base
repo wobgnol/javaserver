@@ -1,0 +1,109 @@
+package de.moaiosbeer.rest_api;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import de.moaiosbeer.dao.User_V1_01_DaO;
+import de.moaiosbeer.db.models.User_V1_01;
+import de.moaiosbeer.helper.MoaHttpClient;
+import de.moaiosbeer.helper.SessionOwner;
+
+
+@Path("v1.01/users")
+@RolesAllowed({"admin","user","manager-gui","player"}) 
+public class ApiUser_V1_01 {
+
+	@GET
+	@Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	@Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	public List<User_V1_01> Get_Users(){
+	// Inztanz der User DataAccesObjects	
+	User_V1_01_DaO UserAccesObject = new User_V1_01_DaO();
+	// giebt alle User_V1_01 aus der Datenbank zurück.
+	return UserAccesObject.getAllUsers();		
+	}
+	
+	
+
+	@GET
+	@Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	@Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	@Path("/{auth}")
+	public Response decodeAuthString(@PathParam("auth") String auth){
+		// Http clienten anlegen 
+		MoaHttpClient client = new MoaHttpClient();	
+		//Hashmap<String K,String V> => username und password
+		HashMap<String,String>  username_password = new HashMap<String,String>();
+		/*String(username:password) am : Splitten und in Hashmap ablegen */
+		username_password = client.getDecodedAuthString(auth);
+		// Server ANtwort schreiben 
+		return Response.status(200).entity(username_password).build();  		  	
+	}
+	
+	@GET
+	@Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	@Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	@Path("/id/{auth}")
+	public Response getUserByID(@PathParam("auth") String auth){
+		/* MoaHttpClinet Instanzieren =>  um RestCall mit Antwort zu erhalten
+		 * und um die Comfort-Methoden des Clienten nutzen zu können */
+		MoaHttpClient client = new MoaHttpClient();	
+		//Hashmap<String K,String V> für => username und password anlegen
+		HashMap<String,String>  username_password = new HashMap<String,String>();
+		/*username und password aus dem Auth-Token decodieren, String(username:password), 
+		 *und am : Splitten. 
+		 *Dann in HashMap ablegen */
+		username_password = client.getDecodedAuthString(auth);
+		/*Hashmap<String key,Long value> anlegen
+		 * Dieses objekt wird als Json zum clienten gesendet*/ 
+		HashMap<String,Long>  userID = new HashMap<String,Long>();
+		/*User Dao anlegen ( Data Acces Object ) 
+		 *Objekt für geregelte DB zugriffe*/
+		User_V1_01_DaO UserAccesObject = new User_V1_01_DaO();
+		// User Id mittels User_dao ermitteln ( Abfrage zur DB )
+		Long id = UserAccesObject.isUser(username_password.get("username") ,username_password.get("password"));
+		// die vom DB-Server peer User-dao erhaltene id in die HashMap<String,Long> schreiben
+		userID.put("id", id);
+		// Server Antwort schreiben Http 200 ok + entity = HashMap<"id",eineLongUserId>
+		return Response.status(200).entity(userID).build();  	
+	}
+	
+
+	  @PUT
+	  @Consumes(MediaType.APPLICATION_JSON)
+	  @Produces(MediaType.APPLICATION_JSON)
+	  public Response putUser_V1_01_json(User_V1_01 user) {
+		  
+		  String result = "User.json send from hhtpPost: id=\""
+				  + user.getId()+"\" username=\""+user.getId()+"\" password=\"" +user.getPassword()+"\"";
+				return Response.status(201).entity(result).build();
+	  }
+	  
+	  
+	  @POST
+	  @Consumes(MediaType.APPLICATION_JSON)
+	  @Produces(MediaType.APPLICATION_JSON)
+	  public Response postUser_V1_01_json(User_V1_01 user) {
+		  
+		  String result = "User.json send from hhtpPost: id=\""
+				  + user.getId()+"\" username=\""+user.getId()+"\" password=\"" +user.getPassword()+"\"";
+				return Response.status(201).entity(result).build();
+	
+	  }
+	  
+	  
+	
+	  	
+}

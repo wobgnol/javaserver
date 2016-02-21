@@ -1,0 +1,244 @@
+package de.moaiosbeer.dao;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.hibernate.criterion.Projections;
+import org.hibernate.criterion.Restrictions;
+
+import de.moaiosbeer.db.models.Playsheet_V1_01;
+import de.moaiosbeer.db.models.User_V1_01;
+import de.moaiosbeer.hibernate.Hib_DB_Conn_V1_01;
+
+public class Playsheet_V1_01_DaO {
+
+	private Hib_DB_Conn_V1_01 Con = new Hib_DB_Conn_V1_01();	
+	private long playsheet_id=1;
+	private int inventory=20;
+	private int incomming=0;
+	private int round=1;
+	private int backorder=0;
+	private int our_order=0;
+	private int new_order=0;
+	private double total_costs=0;
+
+	public int get_incoming(Long psId, int round) throws Exception
+	{
+		try{
+			// Session und Transaktion starten
+			Con.Transaction_Start();
+			// Timeout der Transaktion setzen
+			Con.getTransaction().setTimeout(10);
+			
+			//DB Abfrage mit Hibernate starten alle Tabellen einträge von User
+			List<Integer> list = Con.getSession().createCriteria(Integer.class).setProjection(Projections.property("incoming")).add(Restrictions.eq("playsheetid", psId)).add(Restrictions.eq("round", round)).list();
+			
+			// Transaktion abschließen
+			Con.getTransaction().commit();
+			System.out.println(new Date()+" || Hibernate: Transaction comited");
+			//req.getSession().invalidate();
+			if(list.size()>0)
+			{
+				if(list.get(0)!=null)
+				{
+					return list.get(0);
+				}
+			}
+			throw new Exception("An unknown Error occured, please contact Admin!");
+			
+		// return user_chain ;
+		}catch(RuntimeException e){
+			try{
+				Con.getTransaction().rollback();
+
+				System.out.println("Rolback");
+			}catch(RuntimeException rbe){
+				//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+			}
+			throw e;
+		}finally{
+			if(Con.getSession()!=null){
+				Con.getSession().close();
+				System.out.println(new Date()+ " || Hibernate: Session Closed");
+				//TODO Log für Hibernate Sessions anlegen
+			}
+		}	
+	}
+	public List<Playsheet_V1_01> get_whole_playsheet(Long psId) throws Exception
+	{
+		try{
+			// Session und Transaktion starten
+			Con.Transaction_Start();
+			// Timeout der Transaktion setzen
+			Con.getTransaction().setTimeout(10);
+			
+			//DB Abfrage mit Hibernate starten alle Tabellen einträge von User
+			List<Playsheet_V1_01> list = Con.getSession().createCriteria(Playsheet_V1_01.class).add(Restrictions.eq("playsheetid", psId)).list();
+			
+			// Transaktion abschließen
+			Con.getTransaction().commit();
+			System.out.println(new Date()+" || Hibernate: Transaction comited");
+			//req.getSession().invalidate();
+			
+			return list;
+			
+		// return user_chain ;
+		}catch(RuntimeException e){
+			try{
+				Con.getTransaction().rollback();
+
+				System.out.println("Rolback");
+			}catch(RuntimeException rbe){
+				//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+			}
+			throw e;
+		}finally{
+			if(Con.getSession()!=null){
+				Con.getSession().close();
+				System.out.println(new Date()+ " || Hibernate: Session Closed");
+				//TODO Log für Hibernate Sessions anlegen
+			}
+		}	
+	}
+//===========================NEW=============================================================	NEW Playsheet
+	public List<Fehlerliste> newSheet(Playsheet_V1_01 playsheet)
+	{
+		try{
+			Con.Transaction_Start();
+			Con.getTransaction().setTimeout(10);	
+
+			playsheet_id++;	
+			//New PlaySheet
+			Con.getSession().createQuery(
+			          "INSERT INTO Playsheet_V1_01 "
+			          + "VALUES ('"+ playsheet_id + "','"+ inventory + "','"+ incomming + "'"
+			          + "'"+ round + "','"+ backorder + "','"+ our_order + "'"
+					  + "'"+ new_order + "','"+ total_costs + "');").iterate();
+
+			Con.getTransaction().commit();
+			System.out.println(new Date()+" || Hibernate: Transaction comited");
+		}catch(RuntimeException e){
+			try{
+				Con.getTransaction().rollback();
+				System.out.println("Rolback");
+			}catch(RuntimeException rbe){
+				//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+			}
+			throw e;
+		}finally{
+			if(Con.getSession()!=null){
+				Con.getSession().close();
+				System.out.println(new Date()+ " || Hibernate: Session Closed");
+				//TODO Log für Hibernate Sessions anlegen
+			}
+		}
+		return null;
+	}
+//===========================UPDATE==========================================================	UPDATE Playsheet	
+	public List<Fehlerliste> updateSheet(Playsheet_V1_01 playsheet)
+	{
+		try{
+			Con.Transaction_Start();
+			Con.getTransaction().setTimeout(10);	
+			
+			Con.getSession().createQuery(
+			          "UPDATE Playsheet_V1_01 "
+			          + "SET  inventory = '"+ inventory + "', incomming = '"+ incomming + "'"
+			          + ", round = '"+ round + "', backorder = '"+ backorder + "'"
+			          + ", our_order = '"+ our_order + "', new_order = '"+ new_order + "'"
+			          + ", total_costs = '"+ total_costs + "'"
+			          + "WHERE playsheet_id = '"+ playsheet_id + "';").iterate();
+
+			Con.getTransaction().commit();
+			System.out.println(new Date()+" || Hibernate: Transaction comited");
+		}catch(RuntimeException e){
+			try{
+				Con.getTransaction().rollback();
+				System.out.println("Rolback");
+			}catch(RuntimeException rbe){
+				//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+			}
+			throw e;
+		}finally{
+			if(Con.getSession()!=null){
+				Con.getSession().close();
+				System.out.println(new Date()+ " || Hibernate: Session Closed");
+				//TODO Log für Hibernate Sessions anlegen
+			}
+		}
+		return null;
+	}
+//===========================DELETE==========================================================	DELETE Playsheet
+	public List<Fehlerliste> deleteSheet(Playsheet_V1_01 playsheet)
+	{
+		try{
+			Con.Transaction_Start();
+			Con.getTransaction().setTimeout(10);	
+
+		    // Playsheet löschen
+		    Con.getSession().createQuery(
+			          "Delete From Playsheet_V1_01 "
+			          + "Where playsheet_id = '"+ playsheet_id + "'; ").iterate();
+
+			Con.getTransaction().commit();
+			System.out.println(new Date()+" || Hibernate: Transaction comited");
+		}catch(RuntimeException e){
+			try{
+				Con.getTransaction().rollback();
+				System.out.println("Rolback");
+			}catch(RuntimeException rbe){
+				//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+			}
+			throw e;
+		}finally{
+			if(Con.getSession()!=null){
+				Con.getSession().close();
+				System.out.println(new Date()+ " || Hibernate: Session Closed");
+				//TODO Log für Hibernate Sessions anlegen
+			}
+		}
+		return null;
+	}
+//===========================incommingIn2==================================================	NEW incommingIn2
+	public void incommingIn2(long sheetID, int sheetRound)
+	{
+		/* incommingIn2 gibt den incommingwert für in 2 Runden zurück
+		 * 
+		 */
+		try{
+			Con.Transaction_Start();
+			Con.getTransaction().setTimeout(10);
+		
+			List<Playsheet_V1_01> list = Con.getSession().createCriteria(Playsheet_V1_01.class,"s").list();
+			for(Playsheet_V1_01 sheet : list)
+			{
+				if(sheet.getId()== sheetID)
+				{
+					//int ic =sheet.
+					
+
+				}
+			}
+			
+			
+			Con.getTransaction().commit();
+			System.out.println(new Date()+" || Hibernate: Transaction comited");
+		}catch(RuntimeException e){
+			try{
+				Con.getTransaction().rollback();
+				System.out.println("Rolback");
+			}catch(RuntimeException rbe){
+				//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+			}
+			throw e;
+		}finally{
+			if(Con.getSession()!=null){
+				Con.getSession().close();
+				System.out.println(new Date()+ " || Hibernate: Session Closed");
+				//TODO Log für Hibernate Sessions anlegen
+			}
+		}
+	}
+	
+}

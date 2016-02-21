@@ -1,0 +1,40 @@
+package de.moaiosbeer.rest_api;
+import javax.annotation.security.RolesAllowed;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+
+/**
+ * Dieser API Pfad dient dem Login_Servlet als Nutzer Validierung für den Login
+ * @author Stephan
+ */
+@Path("v1.01/login")
+public class Login_Check_V1_1 {
+
+	// @RolesAllowed("manager-gui")
+	
+	  @GET
+	  @RolesAllowed({"admin","user","manager-gui"})
+	  @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	  @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	  public Response get_Autorisation() {
+		// Mit Http statuscode 200 = ok antworten  
+		return Response.status(200).entity("Login: success").build();
+	  }
+	  
+	  @POST
+	  @RolesAllowed({"admin","user","manager-gui"})
+	  @Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	  @Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
+	  public Response post_Autorisation() {
+		  // Mit Http statuscode 200 = ok antworten 
+		  return Response.status(200).entity("Login: success").build();
+	  }	
+}

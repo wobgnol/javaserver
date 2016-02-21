@@ -1,0 +1,429 @@
+/*
+*************************************************************************
+* 21.12.2015 															*
+* Copyright © 2015-2016 Tim Langenbrink, Stephan Wissing, 				*
+* 						Jonas Klein-Hitpaß 								*
+*************************************************************************
+* 																		*
+* Autor 	   : Tim Langenbrink 										*
+* Company 	   : / 														*
+* File-Name    : GameController.java 									*
+* Beschreibung : Diese Klasse wird verwendet um den Spielfluss von		*
+* 				 "The Beer Game" zu kontrollieren. Hierfür werden		*
+* 				 von den aufrufenden Klassen/URLs die gewünschte		*
+* 				 Aktion mitgeteilt, der User welche diese ausführen		*
+* 				 möchte und auf welches Spiel diese angewandt werden	*
+* 			     soll.													*
+* 																		*
+*************************************************************************
+*/
+
+package de.moaiosbeer.controllers;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.naming.AuthenticationException;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
+
+import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.map.DeserializationConfig.Feature;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.map.type.TypeFactory;
+import org.codehaus.jackson.type.TypeReference;
+
+import com.sun.jersey.api.client.ClientHandlerException;
+import com.sun.jersey.api.client.ClientResponse;
+
+import de.moaiosbeer.dao.Game_V1_01_DaO;
+import de.moaiosbeer.db.models.Game_V1_01;
+import de.moaiosbeer.db.models.User_V1_01;
+import de.moaiosbeer.helper.GameClosedException;
+import de.moaiosbeer.helper.MoaHttpClient;
+import de.moaiosbeer.helper.RequestConstants;
+import de.moaiosbeer.helper.SessionOwner;
+
+/**
+ * Diese Klasse wird verwendet um den Spielfluss von "The Beer Game" zu kontrollieren.
+ */
+@WebServlet("/GameController")
+public class GameController extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+
+	//private User_V1_01_DaO udao = new User_V1_01_DaO();
+	//private Game_V1_01_DaO gdao = new Game_V1_01_DaO();
+	
+	private HashMap<Long, Game_V1_01> games = new HashMap<Long, Game_V1_01>();
+	private ObjectMapper mapper = new ObjectMapper();
+	List<User_V1_01> userlist = new ArrayList<User_V1_01>();
+	PrintWriter out;
+	Boolean debug = true;
+	MoaHttpClient client = new MoaHttpClient();
+	
+	private void writeDebug(String message)
+	{
+		if(debug)
+		{
+			if(out!=null)
+			{
+				try
+				{
+					out.println(message);
+				}catch(Exception e){
+					
+				}
+			}
+		}
+	}
+	private void writelnDebug(String message)
+	{
+		if(debug)
+		{
+			if(out!=null)
+			{
+				try
+				{
+					out.println(message + "</br>");
+				}catch(Exception e){
+					
+				}
+			}
+		}
+	}
+	
+	private ClientResponse getAnswerFromRest(String URL, String json)
+	{
+		while(URL.startsWith("."))
+		{
+			URL = URL.substring(1);
+		}
+		URL = home + URL;
+		// Jersy CLient anlegen ( com.sun.jersey.api.client.Client; )
+		//Client client = Client.create();
+		// Web Resurce anlegen (com.sun.jersey.api.client.WebResource;) und URL zur REST Resurce angeben 
+		//WebResource webResource = client.resource(URL);
+		// In unserem Fall ein User json (de.Das_Portal.beans.User_V1_01.java)
+		// Eine Client Antwort anlegen / response vom Server zum Client (com.sun.jersey.api.client.ClientResponse;)
+		ClientResponse response = new ClientResponse(999, null, null, null);
+		if(json.equals(""))
+		{
+			//response = webResource.accept("application/json").get(ClientResponse.class);
+			try {
+				response = client.invokeGet(URL);
+			} catch (AuthenticationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ClientHandlerException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		else
+		{
+			try {
+				response = client.invokePost(URL, json);
+			} catch (AuthenticationException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ClientHandlerException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			//response = webResource.type("application/json").put(ClientResponse.class, json);
+		}
+		return response;
+	}
+	
+	private void init_client()
+	{
+        client.setUSERNAME("Ich");
+        client.setPASSWORD("1234");
+        
+        client.setACCEPTHEADER(client.getHTTPCONST().MIMETYPE_TEXT_JSON); 
+		client.setPAYLOADTYPE(client.getHTTPCONST().MIMETYPE_TEXT_JSON);
+	}
+	
+	private String home = "http://localhost:8080/MoaIosBeer";
+
+	
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public GameController() {
+        super();
+      
+        mapper.configure(Feature.FAIL_ON_UNKNOWN_PROPERTIES,false);
+        
+        ClientResponse resp;
+        init_client();
+		List<Game_V1_01> gamelist;
+		Game_V1_01_DaO g = new Game_V1_01_DaO();
+		gamelist = g.activeGames();
+		for(Game_V1_01 tempgame : gamelist)
+		{
+			games.put(tempgame.getId(), tempgame);
+		}
+        
+      	gamelist = g.openGames();
+		for(Game_V1_01 tempgame : gamelist)
+		{
+			games.put(tempgame.getId(), tempgame);
+		}
+
+    }
+
+	/**
+	 * Diese Funktion nimmt die Anfragen von anderen Klassen/URLs entgegen und führt die
+	 * gewünschte Funktion aus, unter Berücksigtigung von eventuell vorhandenen Kriterien
+	 * 
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		out = response.getWriter();
+		ClientResponse resp;
+		writelnDebug("Anzahl aktiver User: " + userlist.size());
+		SessionOwner owner = (SessionOwner) request.getSession().getAttribute(RequestConstants.ATTR_SESSION_OWNER);
+		writeDebug("Check if User has valid Session...");
+		if(owner.getSessionID() == null)
+		{
+			writelnDebug("failed");
+			owner.setNextTargetURL("/login.jsp");
+			request.getSession().setAttribute(RequestConstants.ATTR_SESSION_OWNER,owner);
+			RequestDispatcher rd = getServletContext().getRequestDispatcher(owner.getNextTargetURL());
+			rd.forward(request, response);
+			response.getWriter().write("Please Login");
+			return;
+		}
+		writelnDebug("done");
+		long userid = owner.getOwnerID();
+		String mode = owner.getUserAktion();
+		
+		
+		mode = owner.getUserAktion();
+		
+		if(mode.equals(RequestConstants.MODE_CREATE))
+		{
+			writelnDebug("Mode: Spiel erstellen");
+			Game_V1_01 game = new Game_V1_01();
+			String json="";
+			writeDebug("Get User by ID...");
+			resp = getAnswerFromRest("./rest/v1.01/users/uid/" + userid,json);
+        	if(resp.getStatus()==200)
+        	{
+        		writelnDebug("done");
+        		//TODO Stephan fragen ob es so richtig ist!
+				json = resp.getEntity(String.class);
+				User_V1_01 user = mapper.readValue(json, User_V1_01.class);
+					try {
+						writeDebug("Add player to Game...");
+						game.addPlayer(user);
+						writelnDebug("done");
+						writeDebug("Set Gamename...");
+						game.setGamename(user.getUsername());
+						writelnDebug("done");
+					} catch (Exception e) {
+						writelnDebug("failed");
+						writeDebug("500");
+						Response.status(500).build();
+						return;
+					}
+			}
+        	else
+        	{
+        		writelnDebug("failed");
+        	}
+			if(game.getUserlist().size()==1)
+			{
+				try
+				{
+					writeDebug("Write game to DB...");
+					json = mapper.writeValueAsString(game);
+					resp = getAnswerFromRest("./rest/v1.01/games/create",json);
+		        	if(resp.getStatus()==201)
+		        	{
+		        		//TODO Stephan fragen ob es so richtig ist!
+						json = resp.getEntity(String.class);
+						writelnDebug("done");
+						writeDebug("Add game to intern List...");
+						games.put(game.getId(), game);
+						writelnDebug("done");
+						writeDebug("Save gameID to session...");
+						owner.setGameID(game.getId());
+						writelnDebug("done");
+						request.getSession().setAttribute(RequestConstants.ATTR_SESSION_OWNER,owner);
+						writeDebug("201");
+		        	}
+		        	Response.status(resp.getStatus()).build();
+					return;
+				}
+				catch(Exception e)
+				{
+					//Tue nichts, da im folgenen festgelegt wird, dass was fehlgeschlagen ist
+				}
+			}
+			writelnDebug("failed");
+			writeDebug("500");
+			Response.status(500).build();
+			return;
+		}
+		Long gameID = owner.getGameID();
+		
+		if(mode.equals(RequestConstants.MODE_TURN))
+		{
+			writelnDebug("Mode: Spielzug ausführen");
+			Integer order = Integer.parseInt((String) request.getSession().getAttribute(RequestConstants.ATTR_ORDER));
+			try {
+				writeDebug("Perform Users turn...");
+				games.get(gameID).performTurn(userid,order);
+				writelnDebug("done");
+				writeDebug("Check if Game is closed...");
+				if(games.get(gameID).isFinished())
+				{
+					writelnDebug("True");
+					//TODO johnny Gamegeben, wegen der ausgabe
+				}
+				else
+				{
+					writelnDebug("False");
+				}
+				writeDebug("200");
+				Response.status(200).build();
+			} catch (GameClosedException e) {
+				writelnDebug("failed</br>Game is already Closed");
+				writeDebug("400");
+				Response.status(400).build();
+			} catch (Exception e) {
+				writelnDebug("failed</br>It's not users turn");
+				writeDebug("401");
+				Response.status(401).build();
+			}
+		}
+		else if(mode.equals(RequestConstants.MODE_JOIN))
+		{
+			writelnDebug("Mode: Spiel beitreten");
+			writeDebug("Get User by ID...");
+			String json="";
+			resp = getAnswerFromRest("./rest/v1.01/users/uid/" + userid,json);
+        	if(resp.getStatus()==200)
+        	{
+        		writelnDebug("done");
+        		//TODO Stephan fragen ob es so richtig ist!
+				json = resp.getEntity(String.class);
+				User_V1_01 user = mapper.readValue(json, User_V1_01.class);
+					try {
+						writeDebug("Add User to game...");
+						games.get(gameID).addPlayer(user);
+						writelnDebug("done");
+						writeDebug("Update Game in DB...");
+						json = mapper.writeValueAsString(games.get(gameID));
+						resp = getAnswerFromRest("./rest/v1.01/games/update",json);
+			        	if(resp.getStatus()==200)
+			        	{
+			        		//TODO Stephan fragen ob es so richtig ist!
+							json = resp.getEntity(String.class);
+							writelnDebug("done");
+							writeDebug("Check if game is full...");
+							if(!games.get(gameID).isFull())
+							{
+								writelnDebug("isn't full");
+								owner.setNextTargetURL("/wait4players.jsp");
+							}
+							else if(games.get(gameID).isFull())
+							{
+								writelnDebug("is Full");
+								writeDebug("Start Game...");
+								games.get(gameID).startGame();
+								writelnDebug("done");
+								owner.setNextTargetURL("/playsheet.jsp");
+							}
+							request.getSession().setAttribute(RequestConstants.ATTR_SESSION_OWNER,owner);
+							RequestDispatcher rd = getServletContext().getRequestDispatcher(owner.getNextTargetURL());
+							rd.forward(request, response);
+			        	}
+						Response.status(resp.getStatus()).build();
+						return;
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						//e.printStackTrace();
+						writelnDebug("failed");
+						writeDebug("500");
+						Response.status(500).build();
+						return;
+					}
+				}
+			writelnDebug("failed");
+			writeDebug("500");
+			Response.status(500).build();
+			return;
+		}
+		else if(mode.equals(RequestConstants.MODE_SHOWPLAYSHEET))
+		{
+			writelnDebug("Mode: Playsheet anzeigen");
+			owner.setNextTargetURL("/playsheet.jsp");
+			request.getSession().setAttribute(RequestConstants.ATTR_SESSION_OWNER,owner);
+			RequestDispatcher rd = getServletContext().getRequestDispatcher(owner.getNextTargetURL());
+			rd.forward(request, response);
+			Response.status(200).build();
+			return;
+		}
+		else if(mode.equals(RequestConstants.MODE_SHOWGAME))
+		{
+			writelnDebug("Mode: Spiel anzeigen");
+			writeDebug("Check if game is full...");
+			if(games.get(gameID).isFull())
+			{
+				writelnDebug("is Full");
+				writeDebug("Start Game...");
+				games.get(gameID).startGame();
+				writelnDebug("done");
+				owner.setNextTargetURL("/playsheet.jsp");
+			}
+			else
+			{
+				writelnDebug("isn't full");
+				owner.setNextTargetURL("/wait4players.jsp");
+			}
+			request.getSession().setAttribute(RequestConstants.ATTR_SESSION_OWNER,owner);
+			RequestDispatcher rd = getServletContext().getRequestDispatcher(owner.getNextTargetURL());
+			rd.forward(request, response);
+			Response.status(200).build();
+			return;
+		}
+		else if(mode.equals(RequestConstants.MODE_POLLING))
+		{
+			writelnDebug("Mode: Polling");
+			try {
+				writeDebug("Check if it's users turn...");
+				if(userid == games.get(gameID).getActiveUserid())
+				{
+					writelnDebug("done");
+					writeDebug("200");
+					Response.status(200).build();
+					return;
+				}
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				writelnDebug("failed");
+				writeDebug("500");
+				Response.status(500).build();
+				return;
+			}
+			writelnDebug("failed");
+			writeDebug("401");
+			Response.status(401).build();
+			return;
+		}
+	}
+
+}

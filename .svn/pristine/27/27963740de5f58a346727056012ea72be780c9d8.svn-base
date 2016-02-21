@@ -1,0 +1,57 @@
+package de.moaiosbeer.tests;
+
+
+import de.moaiosbeer.db.models.Game_V1_01;
+import de.moaiosbeer.db.models.User_V1_01;
+import de.moaiosbeer.dao.Game_V1_01_DaO;
+import de.moaiosbeer.dao.User_V1_01_DaO;
+
+public class DaO_Test {
+	
+	public static void main(String[] args) {
+		
+		User_V1_01_DaO u = new User_V1_01_DaO();   
+		Game_V1_01_DaO g = new Game_V1_01_DaO();
+		
+		User_V1_01 user = new User_V1_01();
+		
+//		for(Game_V1_01 game : g.openGames())
+//		{
+//			System.out.println(game.getId());
+//		}
+//		for(Game_V1_01 game : g.activeGames())
+//		{
+//			System.out.println(game.getId());
+//		}
+		
+		System.out.println(u.isUser("Ich", "1234"));
+		System.out.println(u.isUser("Heinrich", "1234"));
+		System.out.println(u.isUser("Ich2", "1234"));
+		System.out.println(u.isUser("Heinrich2", "1234"));
+		
+		
+//		System.out.println(g.activeGames());
+//		System.out.println("------------------------------------------------------------------------");
+//		System.out.println(g.openGames());
+		
+//		long g_id = 1;
+//		if(g.partofGame(g_id))
+//			System.out.println("true");
+//		else
+//			System.out.println("false");
+//		g_id = 5;
+//		if(g.partofGame(g_id))
+//			System.out.println("true");
+//		else
+//			System.out.println("false");
+//		g_id = 7;
+//		if(g.partofGame(g_id))
+//			System.out.println("true");
+//		else
+//			System.out.println("false");
+			
+		//u.newUser(user);
+//		u.deleteUser(user);
+		
+	}
+}

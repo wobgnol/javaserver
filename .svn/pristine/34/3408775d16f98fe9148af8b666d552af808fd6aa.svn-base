@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://xmlns.jcp.org/xml/ns/javaee" xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_3_1.xsd" id="WebApp_ID" version="3.1">
+  
+  <!-- Angezeigter Applications Name -->
+  <display-name>MoaIosBeer</display-name>
+  
+  <welcome-file-list>
+  <!-- Liste der Welcome Files die beim starten der WebApp angezeigt werden sollen -->
+    <welcome-file>landingpage.html</welcome-file>
+  </welcome-file-list>
+  
+  <!-- Jersy Framework Einstellungen =========================================== Start -->
+
+  <servlet>
+  <servlet-name>jersey2-example</servlet-name>
+		<servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
+	
+		<init-param>
+			<param-name>javax.ws.rs.Application</param-name>
+			<param-value>de.moaiosbeer.rest_api.MoaIosBeer</param-value>
+		</init-param>
+		
+		<load-on-startup>1</load-on-startup>
+  </servlet>
+  
+  
+  
+  
+  <servlet-mapping>
+    <!-- Jersy Rest Url Mapping festlegen ab hier beginnt die REST API: 
+    (http://hostadresse:8080/MoaIosBeer/rest/*)-->
+    <servlet-name>jersey2-example</servlet-name>
+    <url-pattern>/rest/*</url-pattern>
+  </servlet-mapping>
+  <!-- Jersy Framework Einstellungen =========================================== ENDE -->
+  
+  <filter>
+  	<!-- Cross Orgin Response Filter Einschalten -->
+    <filter-name>CorsFilter</filter-name>
+    <filter-class>org.apache.catalina.filters.CorsFilter</filter-class>
+  </filter>
+  
+  <filter-mapping>
+  	<!-- Cross Orgin Response Filterbereich Festlegen, Filtert ab: 
+  	(http://hostadresse:8080/MoaIosBeer/)-->
+    <filter-name>CorsFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+  
+  <listener>
+  	<!-- Meinen Context Listener an die WebApplication anbinden. 
+  		 wird vorm starten der Anwendung aktiv 
+  		 (initialisiert z.B. Hibernate Connection und Tabellen)
+  		 Todo: Log Einträge fürs initialisieren erstellen-->
+    <listener-class>de.moaiosbeer.listener.MoaIosBeer_ContextListener</listener-class>
+  </listener>
+  <listener>
+  	 <!-- Request Listener an die WebApplication anbinden. 
+  		  wird beim eintreffen von http Client Requests aktiv. 
+  		  Todo: Log Einträge für Requests erstelllen-->
+    <listener-class>de.moaiosbeer.listener.MoaIosBeer_ServletRequestListener</listener-class>
+  </listener>
+  <listener>
+  	 <!-- Meinen Session Listener an die WebApplication anbinden. 
+  		  wird beim Anlegen und zerstören einer http Session aktiv 
+  		  Todo: Log Einträge fürs Sessions erstellen-->
+    <listener-class>de.moaiosbeer.listener.MoaIosBeer_SessionCounterListener</listener-class>
+  </listener>
+</web-app>

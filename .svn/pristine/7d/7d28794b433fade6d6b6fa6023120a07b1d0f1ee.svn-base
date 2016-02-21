@@ -1,0 +1,84 @@
+package de.moaiosbeer.rest_api;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
+import javax.annotation.security.PermitAll;
+import javax.annotation.security.RolesAllowed;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import javax.websocket.server.PathParam;
+import javax.ws.rs.ApplicationPath;
+import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import de.moaiosbeer.db.models.Game_V1_01;
+import de.moaiosbeer.db.models.User_V1_01;
+import de.moaiosbeer.hibernate.Hib_DB_Conn_V1_01;
+import de.moaiosbeer.dao.User_V1_01_DaO;
+
+@Path("v1.01/users")
+public class ApiUser_V1_01 {
+
+	@GET
+	@RolesAllowed("manager-gui")
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<User_V1_01> Get_Users(@Context HttpServletRequest req){
+		System.out.println( req.getHeader("Authorization"));
+	User_V1_01_DaO UserAccesObject = new User_V1_01_DaO();
+	// giebt alle User_V1_01 aus der Datenbank zurück.
+	return UserAccesObject.getAllUsers();
+			
+	}
+	
+	
+	
+//	 @GET
+//     @Produces(MediaType.TEXT_HTML)
+//     @RolesAllowed({"webapp-user"})
+//     public Response getEvent(@Context SecurityContext sc,@PathParam("id") long id) {
+//
+//		 	boolean test = sc.isUserInRole("webapp-admin");
+//      
+//             return Response.status(201).entity(test).build();
+//     }
+
+	
+	
+	
+	  @PUT
+	  @Consumes(MediaType.APPLICATION_JSON)
+	  @Produces(MediaType.APPLICATION_JSON)
+	  public Response putUser_V1_01_json(User_V1_01 user) {
+		  
+		  String result = "User.json send from hhtpPost: id=\""
+				  + user.getId()+"\" username=\""+user.getId()+"\" password=\"" +user.getPassword()+"\"";
+				return Response.status(201).entity(result).build();
+	
+	  }
+	  
+	  
+	  @POST
+	  @Consumes(MediaType.APPLICATION_JSON)
+	  @Produces(MediaType.APPLICATION_JSON)
+	  public Response postUser_V1_01_json(User_V1_01 user) {
+		  
+		  String result = "User.json send from hhtpPost: id=\""
+				  + user.getId()+"\" username=\""+user.getId()+"\" password=\"" +user.getPassword()+"\"";
+				return Response.status(201).entity(result).build();
+	
+	  }
+	  
+	  
+	
+	  	
+}

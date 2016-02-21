@@ -1,0 +1,240 @@
+/*
+*************************************************************************
+* 21.12.2015 															*
+* Copyright © 2015-2016 Tim Langenbrink, Stephan Wissing, 				*
+* 						Jonas Klein-Hitpaß 								*
+*************************************************************************
+* 																		*
+* Autor 	   : Tim Langenbrink 										*
+* Company 	   : / 														*
+* File-Name    : GameController.java 									*
+* Beschreibung : Diese Klasse wird verwendet um den Spielfluss von		*
+* 				 "The Beer Game" zu kontrollieren. Hierfür werden		*
+* 				 von den aufrufenden Klassen/URLs die gewünschte		*
+* 				 Aktion mitgeteilt, der User welche diese ausführen		*
+* 				 möchte und auf welches Spiel diese angewandt werden	*
+* 			     soll.													*
+* 																		*
+*************************************************************************
+*/
+
+package de.moaiosbeer.controllers;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
+
+import de.moaiosbeer.dao.Game_V1_01_DaO;
+import de.moaiosbeer.dao.User_V1_01_DaO;
+import de.moaiosbeer.db.models.Game_V1_01;
+import de.moaiosbeer.db.models.User_V1_01;
+import de.moaiosbeer.helper.GameClosedException;
+import de.moaiosbeer.helper.RequestConstants;
+import de.moaiosbeer.helper.SessionOwner;
+
+/**
+ * Diese Klasse wird verwendet um den Spielfluss von "The Beer Game" zu kontrollieren.
+ */
+@WebServlet("/GameController")
+public class GameController extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+
+	private User_V1_01_DaO udao = new User_V1_01_DaO();
+	private Game_V1_01_DaO gdao = new Game_V1_01_DaO();
+	
+	private HashMap<Long, Game_V1_01> games = new HashMap<Long, Game_V1_01>();
+	List<User_V1_01> userlist = new ArrayList<User_V1_01>();
+	
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public GameController() {
+        super();
+        List<Game_V1_01> gamelist = gdao.activeGames();
+        for(Game_V1_01 tempgame : gamelist)
+        {
+        	games.put(tempgame.getId(), tempgame);
+        }
+        
+        gamelist = gdao.openGames();
+        for(Game_V1_01 tempgame : gamelist)
+        {
+        	games.put(tempgame.getId(), tempgame);
+        }
+    }
+
+	/**
+	 * Diese Funktion nimmt die Anfragen von anderen Klassen/URLs entgegen und führt die
+	 * gewünschte Funktion aus, unter Berücksigtigung von eventuell vorhandenen Kriterien
+	 * 
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		SessionOwner owner = (SessionOwner) request.getSession().getAttribute(RequestConstants.ATTR_SESSION_OWNER);
+		if(owner.getSessionID() == null)
+		{
+			owner.setNextTargetURL("/login.jsp");
+			request.getSession().setAttribute(RequestConstants.ATTR_SESSION_OWNER,owner);
+			RequestDispatcher rd = getServletContext().getRequestDispatcher(owner.getNextTargetURL());
+			rd.forward(request, response);
+			response.getWriter().write("Please Login");
+			return;
+		}
+		long userid = owner.getOwnerID();
+		String mode = owner.getUserAktion();
+		
+		if(mode.equals(RequestConstants.MODE_CREATE))
+		{
+			Game_V1_01 game = new Game_V1_01();
+			for(User_V1_01 user : userlist)
+			{
+				if(user.getId() == userid)
+				{
+					try {
+						game.addPlayer(user);
+						game.setGamename(user.getUsername());
+					} catch (Exception e) {
+						Response.status(500).build();
+						return;
+					}
+					break;
+				}
+			}
+			if(game.getUserlist().size()==1)
+			{
+				try
+				{
+					gdao.newGame(game);
+					games.put(game.getId(), game);
+					owner.setGameID(game.getId());
+					request.getSession().setAttribute(RequestConstants.ATTR_SESSION_OWNER,owner);
+					Response.status(201).build();
+					return;
+				}
+				catch(Exception e)
+				{
+					//Tue nichts, da im folgenen festgelegt wird, dass was fehlgeschlagen ist
+				}
+			}
+			Response.status(500).build();
+			return;
+		}
+		Long gameID = owner.getGameID();
+		
+		if(mode.equals(RequestConstants.MODE_TURN))
+		{
+			Integer order = Integer.parseInt((String) request.getSession().getAttribute(RequestConstants.ATTR_ORDER));
+			try {
+				games.get(gameID).performTurn(userid,order);
+				Response.status(200).build();
+			} catch (GameClosedException e) {
+				Response.status(400).build();
+			} catch (Exception e) {
+				Response.status(401).build();
+			}
+		}
+		else if(mode.equals(RequestConstants.MODE_JOIN))
+		{
+			for(User_V1_01 user : userlist)
+			{
+				if(user.getId() == userid)
+				{
+					try {
+						games.get(gameID).addPlayer(user);
+						gdao.updateGame(games.get(gameID));
+						owner.setNextTargetURL("/wait4players.jsp");
+						request.getSession().setAttribute(RequestConstants.ATTR_SESSION_OWNER,owner);
+						RequestDispatcher rd = getServletContext().getRequestDispatcher(owner.getNextTargetURL());
+						rd.forward(request, response);
+						Response.status(200).build();
+						return;
+					} catch (Exception e) {
+						// TODO Auto-generated catch block
+						//e.printStackTrace();
+						Response.status(500).build();
+						return;
+					}
+				}
+			}
+			Response.status(500).build();
+			return;
+		}
+		else if(mode.equals(RequestConstants.MODE_SHOWPLAYSHEET))
+		{
+			owner.setNextTargetURL("/playsheet.jsp");
+			request.getSession().setAttribute(RequestConstants.ATTR_SESSION_OWNER,owner);
+			RequestDispatcher rd = getServletContext().getRequestDispatcher(owner.getNextTargetURL());
+			rd.forward(request, response);
+			Response.status(200).build();
+			return;
+		}
+		else if(mode.equals(RequestConstants.MODE_SHOWGAME))
+		{
+			if(games.get(gameID).isFull())
+			{
+				owner.setNextTargetURL("/playsheet.jsp");
+			}
+			else
+			{
+				owner.setNextTargetURL("/wait4players.jsp");
+			}
+			request.getSession().setAttribute(RequestConstants.ATTR_SESSION_OWNER,owner);
+			RequestDispatcher rd = getServletContext().getRequestDispatcher(owner.getNextTargetURL());
+			rd.forward(request, response);
+			Response.status(200).build();
+			return;
+		}
+		else if(mode.equals(RequestConstants.MODE_POLLING))
+		{
+			try {
+				if(userid == games.get(gameID).getActiveUserid())
+				{
+					Response.status(200).build();
+					return;
+				}
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				Response.status(500).build();
+				return;
+			}
+			Response.status(401).build();
+			return;
+		}
+		else if(mode.equals(RequestConstants.MODE_LOGIN))
+		{
+			try {
+				User_V1_01 user = udao.getUser(userid);
+				userlist.add(user);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				Response.status(500).build();
+				return;
+			}
+			Response.status(200).build();
+			return;
+		}
+		else if(mode.equals(RequestConstants.MODE_LOGOUT))
+		{
+			try {
+				User_V1_01 user = udao.getUser(userid);
+				userlist.remove(user);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				Response.status(500).build();
+				return;
+			}
+			Response.status(200).build();
+			return;
+		}
+	}
+
+}

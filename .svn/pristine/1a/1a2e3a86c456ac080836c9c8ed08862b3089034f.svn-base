@@ -1,0 +1,257 @@
+package de.moaiosbeer.db.models;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.ManyToMany;
+import javax.persistence.Table;
+import javax.persistence.TableGenerator;
+import javax.persistence.Transient;
+
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
+
+import de.moaiosbeer.dao.Playsheet_V1_01_DaO;
+import de.moaiosbeer.helper.GameClosedException;
+
+@Entity
+@Table (name="Game_V1_01")
+public class Game_V1_01 {
+	
+	@Id
+	@TableGenerator(name="Game_V1_01_ID", table="Game_V1_01_PK" , pkColumnName="Game_V1_01_ID" ,pkColumnValue="Game_V1_01_Value" , allocationSize=1)
+	@GeneratedValue(strategy=GenerationType.TABLE , generator="Game_V1_01_ID")
+	@Column(name="game_id")
+	private long id;
+	
+	@Column(name="currentround")
+	private int currentround;
+	
+	@Column(name="maxrounds")
+	private int maxrounds;	
+
+	@Column(name="gamename")
+	private String gamename;
+	
+	@Transient
+	private int activePlayer = -1;
+	@Transient
+	private String[] role = {"Wholesaler","Distributor","Retailer","Factory"};
+	
+	// wichtig ! FetchType.EAGER sonst kann Jakson nicht die games eines Student ausgeben:
+	@ManyToMany(cascade = CascadeType.ALL)
+	@LazyCollection(LazyCollectionOption.FALSE) 
+	private List<Playsheet_V1_01> playsheets = new ArrayList<Playsheet_V1_01>(0);
+
+	
+	// wichtig ! FetchType.EAGER sonst kann Jakson nicht die games eines Student ausgeben:
+	@ManyToMany(cascade = CascadeType.ALL)
+	@LazyCollection(LazyCollectionOption.FALSE) 
+	private List<User_V1_01> userlist = new ArrayList<User_V1_01>(0);
+	
+	public void startGame()
+	{
+		if(activePlayer<0)
+		{
+			activePlayer=0;
+			currentround=1;
+			maxrounds = 40;
+		}
+	}
+	
+	public Boolean isFull()
+	{
+		return (userlist.size()>=4);
+	}
+
+	private void doOrder(int order) throws Exception
+	{
+		if(activePlayer>=0)
+		{
+			Playsheet_V1_01_DaO p = new Playsheet_V1_01_DaO();
+			int nextRole = (activePlayer+1)%role.length;
+			int incoming = -1;
+			for(Playsheet_V1_01 ps : playsheets){
+				if(ps.getGamerole() == role[activePlayer])
+				{
+					ps.setOurorder(order);
+					for(Playsheet_V1_01 psn : playsheets)
+					{
+						if(psn.getGamerole() == role[nextRole])
+						{
+							psn.calc(order);
+							p.incommingIn2(ps.getId(), this.currentround, psn.getDelivery());
+							p.updateSheet(psn);
+							break;
+						}
+					}
+					p.updateSheet(ps);
+					ps.setRound(ps.getRound()+1);
+					break;
+				}
+			}
+			if(incoming<0)
+			{
+				throw new Exception("Corrupt Game!");
+			}
+		}
+	}
+	
+	public long getActiveUserid() throws Exception
+	{
+		if(activePlayer>=0)
+		{
+			for(Playsheet_V1_01 ps : playsheets){
+				if(ps.getGamerole() == role[activePlayer])
+				{
+					return ps.getOwner_id();
+				}
+			}
+			throw new Exception("Corrupt Game!");
+		}
+		return -1;
+	}
+	
+	public Boolean isFinished()
+	{
+		return (currentround > maxrounds);
+	}
+	
+	public void performTurn(long userID, int newOrder) throws Exception
+	{
+		if(isFinished())
+		{
+			throw new GameClosedException("Game is already closed");
+		}
+		if(userID == getActiveUserid())
+		{
+			doOrder(newOrder);
+			activePlayer++;
+			if(activePlayer%4==0)
+			{
+				activePlayer=0;
+				currentround++;
+			}
+		}
+		throw new Exception("It's not the player's turn");
+	}
+	
+	public Boolean containsPlayer(User_V1_01 user)
+	{
+		for(int i=0;i<userlist.size();i++)
+		{
+			if(userlist.get(i).getId() == user.getId())
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public void addPlayer(User_V1_01 user) throws Exception
+	{
+		if(!isFull())
+		{
+			if(!containsPlayer(user))
+			{
+				userlist.add(user);
+				playsheets.add(new Playsheet_V1_01(user,role[(userlist.size()%4)-1]));
+				return;
+			}
+			throw new Exception("Player already in Game");
+		}
+		throw new Exception("Max amount of Players reached");
+	}
+	
+	
+	
+
+	// Getter und Setter ------------------------------------Start
+	
+	public List<User_V1_01> getUserlist() {
+		return userlist;
+	}
+	
+	public void setUserlist(List<User_V1_01> userlist) {
+		this.userlist = userlist;
+	}
+	
+	public int getCurrentround() {
+		return currentround;
+	}
+
+	public void setCurrentround(int currentround) {
+		this.currentround = currentround;
+	}
+
+	public int getMaxrounds() {
+		return maxrounds;
+	}
+
+	public void setMaxrounds(int maxrounds) {
+		this.maxrounds = maxrounds;
+	}
+
+
+	public List<Playsheet_V1_01> getPlaysheets() {
+		return playsheets;
+	}
+
+	public void setPlaysheets(List<Playsheet_V1_01> playsheets) {
+		this.playsheets = playsheets;
+	}
+
+	public long getId() {
+		return id;
+	}
+	
+	public String getGamename() {
+		return gamename;
+	}
+
+	public void setGamename(String gamename) {
+		this.gamename = gamename;
+	}
+	// Getter und Setter ------------------------------------Ende
+	
+	
+	// Konstrucktoren----------------------------------------Start
+	public Game_V1_01() {
+		// Standart Konstruktor
+		
+	}
+	
+// Timis AdUser Methode	
+//	public void adusertogame(User_V1_01 user){
+//		this.getUserlist().add(user);
+//		this.getPlaysheets().add(new )
+//	}
+	
+	public Game_V1_01(List<User_V1_01> Userlist) {
+		
+		// ist die Playerlist gefüllt ?
+		if ( false == Userlist.isEmpty()){
+			this.userlist = Userlist;
+			System.out.println("\nGame_V1_01_Constructor adds Field => userlist.set(\""+Userlist+"\")");
+			// Ja erstelle Liste von Playsheets 
+			int i=0;
+			for(User_V1_01 user: Userlist ){
+				System.out.println("Game_V1_01_Constructor => called Playsheet_V1_01_Constructor to add FieldEntrys in => this.userlist.add(\"UserID: "+user.getId()+" | Username: "+user.getUsername()+"\")");
+				this.playsheets.add(new Playsheet_V1_01(user,role[i++]));
+			}	
+			System.out.println("\n");
+		}
+		else {
+			// Nein: keine Liste von Playsheets erzeugen
+		}
+		
+	}
+	// Konstrucktoren----------------------------------------Ende
+	
+}
