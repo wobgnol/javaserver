@@ -29,7 +29,17 @@ import de.moaiosbeer.db.models.User_V1_01;
 import de.moaiosbeer.helper.MoaHttpClient;
 import de.moaiosbeer.hibernate.Hib_DB_Conn_V1_01;
 
-
+/**
+ * Diese Klasse ist ein DaO => Data Acces Object für das Hibernate-OrM Mapping,
+ * durch Sie werden geregelte CRUD (Create Read Update Delete) operationen für 
+ * die gemappte Tabelle Gleichen Namens bereitstellt.
+ * 
+ * Sie gewährleistet somit einen geregelten Datenbank zugriff durch die bereitgestellten Methoden.
+ * 
+ * Alle Datenbankzugriffe in dieser ServerImplementierung werden nur durch Daos geregelt.
+ * 
+ * @author Stephan
+ */
 public class Game_V1_01_DaO {
 	
 	private Hib_DB_Conn_V1_01 Con = new Hib_DB_Conn_V1_01();
@@ -37,14 +47,13 @@ public class Game_V1_01_DaO {
 	private long game_id;
 	private String gamerole;
 
-	/*
-	 * Diese Funktion schreibt das übergebene Spiel in die Datenbank.
-	 * Zwischentabellen werden ebenfalls berücksichtigt*/
+	/**
+	 * Diese Methode schreibt das übergebene Spiel in die Datenbank.
+	 * Zwischentabellen werden ebenfalls berücksichtigt
+	 * @param game Game_V1_01 game
+	 */
 	public void newGame(Game_V1_01 game)
 	{
-		/**
-		 newGame bekommt ein Game übergeben und speichert es.
-		 */
 		try{
 			Con.Transaction_Start();
 			Con.getTransaction().setTimeout(10);	
@@ -70,14 +79,15 @@ public class Game_V1_01_DaO {
 		}
 	}
 
-	/*
-	 * Diese Funktion updatet alle benötigten Einträge eines Spiels, welche mit dem
-	 * Hinzufügen eines Spielers verbunden sind*/
+
+	/**
+	 * Diese Methode updatet alle benötigten Einträge eines Spiels, welche mit dem
+	 * Hinzufügen eines Spielers verbunden sind
+	 * @param game Game_V1_01 game
+	 * @param userid long userid
+	 */
 	public void updateGame(Game_V1_01 game, long userid)
 	{
-		/**
-		 updateGame bekommt ein Game übergeben und führt ein update über dieses Game aus.
-		 */
 		try{
 			
 			long pid = -1;
@@ -122,8 +132,8 @@ public class Game_V1_01_DaO {
 		}
 	}
 	
-	/*
-	 * Diese Funktion setzt die aktuelle und maximale runde des angegebenen games neu*/
+	/**
+	 * Diese Methode setzt die aktuelle und maximale runde des angegebenen games neu*/
 	public void updateGame(long gameid, int currentround, int maxrounds)
 	{
 		/**
@@ -158,14 +168,12 @@ public class Game_V1_01_DaO {
 	}
 
 
-	/*
-	 * Diese Funktion löscht das angegebene Spiel aus der Datenbank.
+	/**
+	 * Diese Methode löscht das angegebene Spiel aus der Datenbank.
 	 * Da dies von unserer Seite nicht erwünscht ist, wurde diese Funktion nicht getestet!*/
 	public void deleteGame(Game_V1_01 game)
 	{
-		/**
-		 deleteGame bekommt ein Game übergeben und löscht es.
-		 */
+		
 		try{
 			Con.Transaction_Start();
 			Con.getTransaction().setTimeout(10);	
@@ -194,7 +202,11 @@ public class Game_V1_01_DaO {
 	
 	
 	//===========================GetMyGamesByUserToken========================================================START
-		
+		/**
+		 * Diese Methode giebt alle Spiele eines Spielers anhand seines Tokens zurück
+		 * @param token Auth Token
+		 * @return  List<Game_V1_01>
+		 */
 			public List<Game_V1_01> GetGamesByUserToken(String token){
 					// Rückgabeliste für myGames
 					List<Game_V1_01> listToReturn = new ArrayList<Game_V1_01>();
@@ -249,7 +261,11 @@ public class Game_V1_01_DaO {
 					
 				}
 	//===========================GetMyGamesByUserToken========================================================ENDE
-	
+			/**
+			 * Diese Methode Gibt alles Offenen Spiele eine Spielers anhand seines Auth Tokens zurück
+			 * @param token Auth Token
+			 * @return  List<Game_V1_01>
+			 */
 			public List<Game_V1_01> getOpenGamesByToken(String token){
 				// Rückgabeliste für openGames
 				List<Game_V1_01> listToReturn = new ArrayList<Game_V1_01>();
@@ -368,8 +384,10 @@ public class Game_V1_01_DaO {
 		
 		
 
-		/*
-		 * Diese Funktion ermittelt das Spiel, welches zu der angegebenen gameId gehört*/
+		/**
+		 * Diese Methode ermittelt das Spiel, welches zu der angegebenen gameId gehört
+		 * @return Game_V1_01
+		 * */
 		public Game_V1_01 GetGameById(Long gameID){
 			/**
 			 * GetGameById bekommt eine gameID übergeben und gibt das dazu passende Game zurück. 
@@ -406,16 +424,16 @@ public class Game_V1_01_DaO {
 			}
 			return null;
 		}
-	/*
+	/**
 	 * Diese Funktion ermittelt, ob der User, welcher durch die übergebene UserID
 	 * repräsentiert wird, teil eines OFFENEN/AKTIVEN Spiels ist.
 	 * Offen ist ein Spiel, wenn noch Spieler beitreten können.
-	 * Aktiv, wenn das Spiel voll ist und noch nicht beendet*/
+	 * Aktiv, wenn das Spiel voll ist und noch nicht beendet
+	 * 
+	 * @return true wenn er Teil des Spiels ist sonst false*/
 	public boolean partofGame(Long id)
 	{
-		/**
-		 * partofGame überprüft ob ein Spieler an einem Spiel beteildigt ist oder nicht. 
-		 */
+		
 		try{
 			Con.Transaction_Start();
 			Con.getTransaction().setTimeout(10);	
@@ -456,13 +474,12 @@ public class Game_V1_01_DaO {
 		return false;
 	}
 	
-		/*
-		 * Diese Funktion gibt alle Spiele zurück, bei denen noch Plätze für Spieler frei sind*/
+		/**
+		 * Diese Methode gibt alle Spiele zurück, bei denen noch Plätze für Spieler frei sind
+		 * @return List<Game_V1_01>*/
 		public List<Game_V1_01> openGames()
 		{
-			/**
-			 * openGames gibt ein Liste mit all denen Games zurrück denen ein Spieler noch beitreten kann. 
-			 */
+			
 			try{
 				Con.Transaction_Start();
 				Con.getTransaction().setTimeout(10);	
@@ -498,13 +515,12 @@ public class Game_V1_01_DaO {
 			}
 		}
 		
-		/*
-		 * Diese Funktion gibt alle Spiele zurück, welche voll sind, aber noch nicht beendet*/
+		/**
+		 * Diese Methode gibt alle Spiele zurück, welche voll sind, aber noch nicht beendet
+		 * @return List<Game_V1_01>*/
 		public List<Game_V1_01> activeGames()
 		{
-			/**
-			 * activeGames gibt ein Liste mit allen laufenden Games zurück. 
-			 */
+			
 			try{
 				Con.Transaction_Start();
 				Con.getTransaction().setTimeout(10);	
@@ -539,15 +555,13 @@ public class Game_V1_01_DaO {
 			}
 		}
 		
-		/*
+		/**
 		 * Diese Funktion ermittelt anhand der gameID, welcher Spieler in dem Spiel welche
-		 * Spielrolle übernimmt(Wholesaler, Retailer, etc)*/
+		 * Spielrolle übernimmt(Wholesaler, Retailer, etc)
+		 * @return List<HashMap>*/
 		public List<HashMap> listRoleUser(long gameID)
 		{
-			/**
-			 * Die Methode listRoleUser bekommt eine Game ID übergeben und gib eine Liste von HashMap's zurück.
-			 * In einer HashMap steht der Rollenname und der Username.
-			 */
+			
 			try{
 				Con.Transaction_Start();
 				Con.getTransaction().setTimeout(10);	
@@ -583,6 +597,48 @@ public class Game_V1_01_DaO {
 				
 				return  hList;
 				
+			}catch(RuntimeException e){
+				try{
+					Con.getTransaction().rollback();
+					System.out.println("Rolback");
+				}catch(RuntimeException rbe){
+					//TODO Log für Transaktions rollback anlegen : log.error("Couldn’t roll back transaction", rbe);
+				}
+				throw e;
+			}finally{
+				if(Con.getSession()!=null){
+					Con.getSession().close();
+					System.out.println(new Date()+ " || Hibernate: Session Closed");
+					//TODO Log für Hibernate Sessions anlegen
+				}
+			}
+		}
+	
+		/**
+		 * Diese Methode Prüft ob ein Game mit diesem Namen Bereits existiert
+		 * activeGames gibt ein Liste mit allen laufenden Games zurück. 
+		 * @param gamename String des Spiel Namens
+		 * @return true =>  Name bereits vergeben | false Name nicht Vergeben
+		 */
+		public boolean existGame(String gamename)
+		{
+			try{
+				Con.Transaction_Start();
+				Con.getTransaction().setTimeout(10);	
+
+				//List<Game_V1_01> gameList = new ArrayList<Game_V1_01>();
+				List<Game_V1_01> list = Con.getSession().createCriteria(Game_V1_01.class,"u").list();
+				for(Game_V1_01 game : list)
+				{
+					if(game.getGamename().equals(gamename))
+					{
+						return true;
+					}
+				}	
+				
+				Con.getTransaction().commit();
+				System.out.println(new Date()+" || Hibernate: Transaction comited");
+				return  false;
 			}catch(RuntimeException e){
 				try{
 					Con.getTransaction().rollback();

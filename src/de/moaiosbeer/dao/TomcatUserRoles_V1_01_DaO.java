@@ -20,6 +20,17 @@ import java.util.Date;
 import de.moaiosbeer.db.models.TomcatUserRoles_V1_01;
 import de.moaiosbeer.hibernate.Hib_DB_Conn_V1_01;
 
+/**
+ * Diese Klasse ist ein DaO => Data Acces Object für das Hibernate-OrM Mapping,
+ * durch Sie werden geregelte CRUD (Create Read Update Delete) operationen für 
+ * die gemappte Tabelle Gleichen Namens bereitstellt.
+ * 
+ * Sie gewährleistet somit einen geregelten Datenbank zugriff durch die bereitgestellten Methoden.
+ * 
+ * Alle Datenbankzugriffe in dieser ServerImplementierung werden nur durch Daos geregelt.
+ * 
+ * @author Stephan
+ */
 public class TomcatUserRoles_V1_01_DaO {
 	
 	private Hib_DB_Conn_V1_01 Con = new Hib_DB_Conn_V1_01();
@@ -27,14 +38,12 @@ public class TomcatUserRoles_V1_01_DaO {
 	private long role_id;
 	private String rolename;
 	
-	/*
-	 * Diese Funktion legt eine neue Tomcat-Role in der Datenbank an
+	/**
+	 * Diese Methode legt eine neue Tomcat-Role in der Datenbank an
 	 * */
 	public void newTomcatUserRole(TomcatUserRoles_V1_01 tomcatUserRoles)
 	{
-		/**
-		 * Die Methode newTomcatUserRole erstellt eine neue Tomcat Benutzerrolle
-		 */
+		
 		try{
 			Con.Transaction_Start();
 			Con.getTransaction().setTimeout(10);	
@@ -62,13 +71,11 @@ public class TomcatUserRoles_V1_01_DaO {
 		}
 	}
 	
-	/*
+	/**
 	 * Diese Funktion, updatet eine bestehende Tomcat-Role in der Datenbank*/
 	public void updateTomcatUserRole(TomcatUserRoles_V1_01 tomcatUserRoles)
 	{
-		/**
-		 * Die Methode updateTomcatUserRole aktualisiert die Benutzerrolle
-		 */
+	
 		try{
 			Con.Transaction_Start();
 			Con.getTransaction().setTimeout(10);	
@@ -96,7 +103,7 @@ public class TomcatUserRoles_V1_01_DaO {
 		}
 	}
 	
-	/*
+	/**
 	 * Diese Funktion löscht die angegebene Tomcat-Rolle aus der Datenbank
 	 * Da dies von uns nicht gewünscht ist, wurde diese Funktion nicht getestet
 	 * */

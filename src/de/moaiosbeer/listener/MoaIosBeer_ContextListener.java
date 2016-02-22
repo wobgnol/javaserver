@@ -30,18 +30,20 @@ implements  ServletContextListener{
 		
 		System.out.println("\n\nInitialize WebApplication: MoaIosBeer  => ServletContextListener started\n");
 		System.out.println("Stepp 1 of 1: Start => Initialize Hibernate");
+		/**
+		 * Hibernate Session Factory Global Registrieren
+		 */
 		HibernateUtil.getSessionFactory(); // Initialize the Database connection for Hibernate 
 		System.out.println("Stepp 1 of 1: Ready => Hibernate Initialized\n");
 		System.out.println("WebApplication: MoaIosBeer now Initialized next => Start Web Application\n\n");
 	}
 	
 	
-	
+	@Override
 	/** 
-	 * Dieser Code wird vorm dem Herunterfahren der Webanwendung ausgeführ 
+	 * Dieser Code wird vor dem Herunterfahren der Webanwendung ausgeführ 
 	 * (Aufräumen, finales Persitieren etc)
 	 */
-	@Override
 	public void contextDestroyed(ServletContextEvent arg0) {
 		
 		HibernateUtil.getSessionFactory().close(); // Free all Hibernate resources 

@@ -31,6 +31,17 @@ import de.moaiosbeer.db.models.Playsheet_V1_01;
 import de.moaiosbeer.db.models.User_V1_01;
 import de.moaiosbeer.hibernate.Hib_DB_Conn_V1_01;
 
+/**
+ * Diese Klasse ist ein DaO => Data Acces Object für das Hibernate-OrM Mapping,
+ * durch Sie werden geregelte CRUD (Create Read Update Delete) operationen für 
+ * die gemappte Tabelle Gleichen Namens bereitstellt.
+ * 
+ * Sie gewährleistet somit einen geregelten Datenbank zugriff durch die bereitgestellten Methoden.
+ * 
+ * Alle Datenbankzugriffe in dieser ServerImplementierung werden nur durch Daos geregelt.
+ * 
+ * @author Stephan
+ */
 public class Playsheet_V1_01_DaO {
 
 	private Hib_DB_Conn_V1_01 Con = new Hib_DB_Conn_V1_01();	
@@ -43,14 +54,13 @@ public class Playsheet_V1_01_DaO {
 	private int new_order=0;
 	private double total_costs=0;
 
-	/*
-	 * Diese Funktion ermittelt nahand der anzahl vorhandener Playsheets die nächst mögliche
-	 * Playsheet ID*/
+	/**
+	 * Diese Methode ermittelt nahand der anzahl vorhandener Playsheets die nächst mögliche
+	 * Playsheet ID
+	 * @return int*/
 	public int get_next_playsheetid()
 	{
-		/**
-		 * Die Methode get_next_playsheetid gibt die nächste id eines PlaySheets zurück.
-		 */
+		
 		try{
 			// Session und Transaktion starten
 			Con.Transaction_Start();
@@ -85,14 +95,13 @@ public class Playsheet_V1_01_DaO {
 		}	
 	}
 	
-	/*
-	 * Diese funktion gibt das Feld "Incoming" des angegebenen Playsheets in der angegeben
-	 * Runde zurück*/
+	/**
+	 * Diese Methode gibt das Feld "Incoming" des angegebenen Playsheets in der angegeben
+	 * Runde zurück
+	 * @return int */
 	public int get_incoming(Long psId, int round) throws Exception
 	{
-		/**
-		 * Die Methode get_incoming gibt die nächste id eines PlaySheets zurück.
-		 */
+		
 		try{
 			// Session und Transaktion starten
 			Con.Transaction_Start();
@@ -134,13 +143,12 @@ public class Playsheet_V1_01_DaO {
 		}	
 	}
 	
-	/*
-	 * Diese Funktion gibt alle Einträge des angegebenen Playsheets zurück*/
+	/**
+	 * Diese Methode gibt alle Einträge des angegebenen Playsheets zurück
+	 * @return List<Playsheet_V1_01>*/
 	public List<Playsheet_V1_01> get_whole_playsheet(Long psId) throws Exception
 	{
-		/**
-		 * Die Methode get_whole_playsheet gibt eine Liste der PlaySheets zurück.
-		 */
+		
 		try{
 			// Session und Transaktion starten
 			Con.Transaction_Start();
@@ -176,13 +184,12 @@ public class Playsheet_V1_01_DaO {
 		}	
 	}
 	
-	/*
-	 * Diese Funktion fügt ein neues Playsheet in die Datenbank ein*/
+	/**
+	 * Diese Methode fügt ein neues Playsheet in die Datenbank ein
+	 * @return List<Fehlerliste>*/
 	public List<Fehlerliste> newSheet(Playsheet_V1_01 playsheet)
 	{
-		/**
-		 * Die Methode newSheet legt ein neues PlaySheet an.
-		 */
+		
 		try{
 			Con.Transaction_Start();
 			Con.getTransaction().setTimeout(10);	
@@ -209,8 +216,8 @@ public class Playsheet_V1_01_DaO {
 		return null;
 	}
 
-	/*
-	 * diese Funktion füht ein Update auf ein bestehendes Playsheet aus
+	/**
+	 * diese Methode füht ein Update auf ein bestehendes Playsheet aus
 	 * (Neuer Eintrag für neue Runde)*/
 	public void updateSheet(Playsheet_V1_01 playsheet)
 	{
@@ -243,15 +250,13 @@ public class Playsheet_V1_01_DaO {
 	
 	}
 	
-	/*
-	 * Diese Funktion löscht das angegebene Playsheet aus der Datenbank
+	/**
+	 * Diese Methode löscht das angegebene Playsheet aus der Datenbank
 	 * Da dies von uns nicht gewünscht ist, wurde diese Funktion nicht getestet
-	 * */
+	 * @return List<Fehlerliste>*/
 	public List<Fehlerliste> deleteSheet(Playsheet_V1_01 playsheet)
 	{
-		/**
-		 * Die Methode deleteSheet löscht das gewünschte PlaySheet.
-		 */
+		
 		try{
 			Con.Transaction_Start();
 			Con.getTransaction().setTimeout(10);	
@@ -281,25 +286,24 @@ public class Playsheet_V1_01_DaO {
 		return null;
 	}
 
-	/*
-	 * Diese Funktion setzt das Incoming des angegebenen Playsheets für die
+	/**
+	 * Diese Methode setzt das Incoming des angegebenen Playsheets für die
 	 * übergebene runde+2 in der Datenbank*/
 	public void incommingIn2(long sheetID, int sheetRound, int inc)
 	{
-		/** 
-		 * incommingIn2 setzt den incommingwert für in 2 Runden
-		 * 
-		 */
+	
 		try{
+			// Liste aller S
 			List<Playsheet_V1_01> list = get_whole_playsheet(sheetID);
 			Con.Transaction_Start();
 			Con.getTransaction().setTimeout(10);
 			//TODO angegebenes Incoming in neuem Eintrag speichern(aktuelle Runde + 2)
 
 			Playsheet_V1_01 ps = new Playsheet_V1_01(list.get(0));
+			Con.getSession().save(ps);
 			ps.setRound(sheetRound + 2);
 			ps.setIncoming(inc);
-			Con.getSession().save(ps);
+			Con.getSession().update(ps);
 		
 		
 			Con.getTransaction().commit();
@@ -324,16 +328,13 @@ public class Playsheet_V1_01_DaO {
 		}
 	}
 
-	/*
-	 * Diese Funktion wird nicht verwendet.
+	/**
+	 * Diese Methode wird nicht verwendet.
 	 * Sie wurde ursprünglich für die Statistik entwickelt
-	 * */
+	 * @return List<HashMap>*/
 	public List<HashMap> costStats(Game_V1_01 game)
 	{
-		/**
-		 * Die Methode costStats gibt für jeden Spieler eines Spiels nach dessen beendigung 
-		 * die Kosten für jede woche zurück.
-		 */
+		
 		try{
 			Con.Transaction_Start();
 			Con.getTransaction().setTimeout(10);
@@ -417,16 +418,13 @@ public class Playsheet_V1_01_DaO {
 	}
 	
 
-	/*
-	 * Diese Funktion wird nicht verwendet.
+	/**
+	 * Diese Methode wird nicht verwendet.
 	 * Sie wurde ursprünglich für die Statistik entwickelt
-	 * */
+	 * @return List<HashMap> */
 	public List<HashMap> orderStats(Game_V1_01 game)
 	{
-		/**
-		 * Die Methode orderStats gibt für jeden Spieler eines Spiels nach dessen beendigung 
-		 * die Bestellungen für jede woche zurück.
-		 */
+		
 		try{
 			Con.Transaction_Start();
 			Con.getTransaction().setTimeout(10);
@@ -508,16 +506,13 @@ public class Playsheet_V1_01_DaO {
 			return null;
 		}
 	
-	/*
-	 * Diese Funktion wird nicht verwendet.
+	/**
+	 * Diese Methode wird nicht verwendet.
 	 * Sie wurde ursprünglich für die Statistik entwickelt
-	 * */
+	 * @return List<HashMap>*/
 	public List<HashMap> borderStats(Game_V1_01 game)
 	{
-		/**
-		 * Die Methode borderStats gibt für jeden Spieler eines Spiels nach dessen beendigung 
-		 * den Lieferrückstand für jede woche zurück.
-		 */
+	
 		try{
 			Con.Transaction_Start();
 			Con.getTransaction().setTimeout(10);

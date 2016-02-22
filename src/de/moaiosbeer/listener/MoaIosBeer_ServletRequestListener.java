@@ -12,13 +12,18 @@ import javax.servlet.ServletRequestListener;
  */
 public class MoaIosBeer_ServletRequestListener implements ServletRequestListener {
  
+	/**
+	 * Dieser Code wird Ausgeführt wenn ein request beendet wird
+	 */
 	public void requestDestroyed(ServletRequestEvent event) {
 		// TODO System.out.println(); durch Request Log Austauschen
 		System.out.println("request being sent to "
 				+ event.getServletRequest().getRemoteAddr() );
 	
 	}
- 
+	/**
+	 * Dieser Code wird ausgeführt wenn ein request eingeht
+	 */
 	public void requestInitialized(ServletRequestEvent event) {
 		// TODO System.out.println(); durch Request Log Austauschen
 		System.out.println("now initializing request"

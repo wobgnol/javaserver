@@ -1,13 +1,17 @@
 package de.moaiosbeer.rest_api;
 
-
-
-import javax.ws.rs.ApplicationPath;
-
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 
+/**
+ * Diese Klasse Dient dem Jersey Framework Jaxrs.ws für Rest,
+ * als Globale Resourcen Configuration
+ * 
+ * Hier wird eingestellt Welche Klassen zum Frontend in Json gemapt werden können,
+ * ob ein Nutzer Rollen check verwendet werden soll uvm siehe Jersey Dokumentation
+ * @author Stephan
+ */
 public class MoaIosBeer extends ResourceConfig{
 	
 	public MoaIosBeer() {

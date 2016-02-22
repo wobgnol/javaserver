@@ -23,6 +23,7 @@ public class MoaHttpHeaderHelper {
 
 		Map<String, String> map = new HashMap<String, String>();
 
+		@SuppressWarnings("rawtypes")
 		Enumeration headerNames = request.getHeaderNames();
 		while (headerNames.hasMoreElements()) {
 			String key = (String) headerNames.nextElement();

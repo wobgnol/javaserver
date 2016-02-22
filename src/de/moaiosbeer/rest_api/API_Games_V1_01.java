@@ -1,7 +1,6 @@
 package de.moaiosbeer.rest_api;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 
@@ -9,7 +8,6 @@ import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -19,7 +17,6 @@ import javax.ws.rs.core.Response;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
-import org.hibernate.criterion.Restrictions;
 
 import de.moaiosbeer.dao.Game_V1_01_DaO;
 import de.moaiosbeer.dao.Playsheet_V1_01_DaO;
@@ -27,16 +24,33 @@ import de.moaiosbeer.dao.User_V1_01_DaO;
 import de.moaiosbeer.db.models.Game_V1_01;
 import de.moaiosbeer.db.models.Playsheet_V1_01;
 import de.moaiosbeer.db.models.User_V1_01;
-import de.moaiosbeer.hibernate.Hib_DB_Conn_V1_01;
 
 
 /**
- * Dieser API Pfad dient dem Login_Servlet als Nutzer Validierung für den Login
+ * Dieser Api Pfad [ ./rest/v1.01/games ] Ist der Hauptaufsatzpunkt der API_Games_V1_01
+ * Welcher alle Öffentlichen Rest-Calls welche für die Klasse de.moaiosbeer.db.models.Games_V1_01.java 
+ * bereitgestellt werden sollen.
+ * 
+ * Http Methoden mit Methoden Auffruf an dieser URL: GET oder POST
+ * Weitere Methoden Erlaubt aber geben keinen Content zurück
  * @author Stephan
  */
 @Path("v1.01/games")
 public class API_Games_V1_01 {
 	
+	
+	
+	/**
+	 * Dieser Api Pfad [ ./rest/v1.01/users/{auth}/create={gamename}/as={roleID} ],
+	 * ist für die Rollen: {"admin","player","manager-gui"} zugänglich ( mittels POST ).
+	 * Erstellt auf ein Post Request ein Spiel von dem User der den Request sendet,
+	 * Wenn der Spielname nicht schon vergeben ist, und teilt Ihm der gewählten Rolle im Spiel zu.
+	 * 
+	 * @param token String: Auth Key
+	 * @param gamename String: Name des Spiels welches erstellt werden soll
+	 * @param roleId String: der Rolle 
+	 * @return Format JSON + Statuscode  Http 500 wenn Spieler nicht im System Vorhanden ist | Http 406 wenn Spielname bereits Vergeben | Http 400 bei fehlerhaftem requst | Http 201 Wenn Spiel erstellt wird
+	 */
 	@POST
 	@RolesAllowed({"admin","player","manager-gui"})
 	@Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
@@ -50,6 +64,7 @@ public class API_Games_V1_01 {
 		g.setGamename(gamename);
 		User_V1_01_DaO ud = new User_V1_01_DaO();
 		try {
+			// testen ob User Valide ist
 			u = ud.getUser(ud.getUserIdByAuthToken(token));
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -58,7 +73,12 @@ public class API_Games_V1_01 {
 		
 		try {
 			g.addPlayer(u,roleId);
+			//Testen ob Spielname schon vergeben ist
+			if(gd.existGame(g.getGamename()) == false){
 			gd.newGame(g);
+			}
+			// Http 406 	Not Acceptable
+			else return Response.status(406).entity("").build() ;
 		} catch (Exception e) {
 			e.printStackTrace();
 			// 400 Bad Request
@@ -68,6 +88,17 @@ public class API_Games_V1_01 {
 		return Response.status(201).build();
 	}
 	
+	
+
+	/**
+	 * Dieser Api Pfad [ ./rest/v1.01/users/{auth}/join={gameid}/as={roleID} ],
+	 * ist für die Rollen: {"admin","player","manager-gui"} zugänglich( mittels POST ).
+	 * Ermöglicht Spielern auf ein Post Request einem Spiel Beizutreten, wenn dies nicht bereits Voll ist.
+	 * @param token String: Auth Key
+	 * @param gameid Long gameID
+	 * @param roleId String: der Rolle 
+	 * @return Format JSON + Statuscode  Http 400 bei fehlerhaftem requst | Http 500 bei server Fehler | Http 200 wenn game join durchgeht |
+	 */
 	@POST
 	@RolesAllowed({"admin","player","manager-gui"})
 	@Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
@@ -101,6 +132,15 @@ public class API_Games_V1_01 {
 		return Response.status(200).build();
 	}
 	
+	/**
+	 * 
+	 * Dieser Api Pfad [ ./rest/v1.01/users/{auth}/myplaysheet={gameid}],
+	 * ist für die Rollen: {"admin","player","manager-gui"} zugänglich( mittels GET ).
+	 * Ermöglicht Spielern auf ein Get Request Ihr Aktuelles Playsheet Abzurufen.
+	 * @param token String: Auth Key
+	 * @param gameid Long gameID
+	 * @return Format JSON + Statuscode  Http 500 bzw 501 bei Server Fehler | Http 200 wenn Abfrage durchgeht
+	 */
 	@GET
 	@RolesAllowed({"admin","player","manager-gui"})
 	@Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
@@ -200,6 +240,15 @@ public class API_Games_V1_01 {
 		return Response.status(200).entity(json).build();
 	}
 	
+	
+	/**
+	 * 
+	 * Dieser Api Pfad [ ./rest/v1.01/users/{auth}/open],
+	 * ist für die Rollen: {"admin","player","manager-gui"} zugänglich( mittels GET ).
+	 * Ermöglicht Spielern Ihre momentan offenen Spiele abzufragen
+	 * @param token String: Auth Key
+	 * @return Format JSON + Statuscode  Http 500  bei Server Fehler | Http 200 wenn Abfrage durchgeht
+	 */
 	@GET
 	@RolesAllowed({"admin","player","manager-gui"}) 
 	@Produces({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
@@ -209,6 +258,7 @@ public class API_Games_V1_01 {
 		/* Userdao anlegen um die userid eines nutzers anhand des AuthTokens zu finden*/
 		User_V1_01_DaO Userdao = new User_V1_01_DaO();
 		// Userid anhand des Tokens ermitteln
+		@SuppressWarnings("unused")
 		Long userID = Userdao.getUserIdByAuthToken(auth);
 		
 		// GameDao Instanzieren

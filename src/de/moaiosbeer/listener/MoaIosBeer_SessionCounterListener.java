@@ -21,7 +21,10 @@ public class MoaIosBeer_SessionCounterListener implements HttpSessionListener {
 	  public static int getTotalActiveSession(){  
 		return totalActiveSessions;
 	  }
-		
+	
+	  /**
+	   * Dieser Code wird ausgeführt wenn eine Java Serversitzung erstellt wird
+	   */
 	  @Override
 	  public void sessionCreated(HttpSessionEvent arg0) {
 		  
@@ -29,7 +32,10 @@ public class MoaIosBeer_SessionCounterListener implements HttpSessionListener {
 		totalActiveSessions++;
 		System.out.println(new Date()+ " || Tomcat: sessionCreated || add one session into counter");
 	  }
-
+	  
+	  /**
+	   * Dieser Code wird ausgeführt wenn eine Java Serversitzung beendet wird
+	   */
 	  @Override
 	  public void sessionDestroyed(HttpSessionEvent arg0) {
 		  // TODO  an log file binden ( Session gelöscht )

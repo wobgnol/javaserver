@@ -27,6 +27,18 @@ import de.moaiosbeer.db.models.TomcatUserRoles_V1_01;
 import de.moaiosbeer.db.models.User_V1_01;
 import de.moaiosbeer.helper.MoaHttpClient;
 import de.moaiosbeer.hibernate.Hib_DB_Conn_V1_01;
+
+/**
+ * Diese Klasse ist ein DaO => Data Acces Object für das Hibernate-OrM Mapping,
+ * durch Sie werden geregelte CRUD (Create Read Update Delete) operationen für 
+ * die gemappte Tabelle Gleichen Namens bereitstellt.
+ * 
+ * Sie gewährleistet somit einen geregelten Datenbank zugriff durch die bereitgestellten Methoden.
+ * 
+ * Alle Datenbankzugriffe in dieser ServerImplementierung werden nur durch Daos geregelt.
+ * 
+ * @author Stephan
+ */
 public class User_V1_01_DaO {
 
 // Private inztanz des Verbindungshelfers	
@@ -35,9 +47,9 @@ private Hib_DB_Conn_V1_01 Con = new Hib_DB_Conn_V1_01();
 protected Long user_id;
 
 /**
- * Diese User-Dao Methode giebt anhand eines Auth-Tokens eine UserId zurück.
+ * Diese Methode gibt anhand eines Auth-Tokens eine User Id zurück.
  * @param token base64 Encoding aus username:password
- * @return Long userID
+ * @return Long User_V1_01 ID
  */
 public Long getUserIdByAuthToken ( String token){
 	/* MoaHttpClinet Instanzieren =>  um RestCall mit Antwort zu erhalten
@@ -53,13 +65,16 @@ public Long getUserIdByAuthToken ( String token){
 	return  this.isUser(username_password.get("username") ,username_password.get("password"));	 
 }
 
-/*
- * Diese Funktion gibt anhand der Userid das Userobjekt zurück*/
+
+/**
+ * Diese Funktion gibt anhand der Userid das Userobjekt zurück
+ * @param userid Long User_V1_01 ID
+ * @return User_V1_01 Objekt
+ * @throws Exception  RuntimeException Bei Hibernate Rolback
+ */
 public User_V1_01 getUser(long userid) throws Exception
 {
-	/**
-	 * Die Methode getUser gibt auf eier Benutzer ID den kompletten User zurück.
-	 */
+
 	try{
 		// Session und Transaktion starten
 		Con.Transaction_Start();
@@ -98,8 +113,9 @@ public User_V1_01 getUser(long userid) throws Exception
 }
 
 /**
- * Giebt alle User_V1_01 beans aus der DB als Liste zurück
- * @return Lise von Benutzern in der DB
+ * Giebt alle User_V1_01 aus der DB als Liste zurück
+ * @return List <User_V1_01> 
+ * @throws Exception  RuntimeException Bei Hibernate Rolback
  */
 public List<User_V1_01> getAllUsers(){
 	
@@ -143,8 +159,9 @@ public List<User_V1_01> getAllUsers(){
  
 
 /**
- * Die Methode newUser erstellt einen neuen Benutzer  in der Datenbank.
+ * Die Methode newUser erstellt einen neuen Benutzer in der Datenbank.
  * @param user de.moaiosbeer.db.models.User_V1_01.java
+ * @throws Exception  RuntimeException Bei Hibernate Rolback
  */
 public void newUser(User_V1_01 user)
 {
@@ -186,9 +203,11 @@ public void newUser(User_V1_01 user)
 	}
 }
 
-/*
+
+/**
  * Diese Funktion ändert die gewünschten Einträge des Users in der Datenbank
- * */
+ * @param user Instanz: User_V1_01 user
+ */
 public void updateUser(User_V1_01 user)
 {
 	/**
@@ -219,10 +238,12 @@ public void updateUser(User_V1_01 user)
 	}
 }
 
-/*
- * Diese funktion löscht den angegebenen Nutzer aus der Datenbank
+
+/**
+ * Diese Metzhode löscht den angegebenen Nutzer aus der Datenbank
  * Da dies von uns nicht gewünscht ist, wurde diese Funktion nicht getestet
- * */
+ * @param user
+ */
 public void deleteUser(User_V1_01 user)
 {
 	/**
@@ -253,11 +274,15 @@ public void deleteUser(User_V1_01 user)
 	}
 }
 
+
 /**
  * Diese Methode ermittelt anhand des übergebenen Usernames und Passworts, 
  * ob dies ein registrierter Benutzer ist
- * */
-public Long isUser(String user, String passw)
+ * @param username String: User_V1_01 username
+ * @param password String: User_V1_01 passwort
+ * @return Long  true Wenn User_V1_01 ein Valider User ist | sonst false
+ */
+public Long isUser(String username, String password)
 {
 	/**
 	 * Die Methode isUser prüft den Benutzer auf eine ID. 
@@ -269,9 +294,9 @@ public Long isUser(String user, String passw)
 		List<User_V1_01> list = Con.getSession().createCriteria(User_V1_01.class,"u").list();
 		for (User_V1_01 userList : list)
 		{
-			if(userList.getUsername().equals(user))
+			if(userList.getUsername().equals(username))
 			{
-				if(userList.getPassword().equals(passw))
+				if(userList.getPassword().equals(password))
 				{
 					return userList.getId();
 				}

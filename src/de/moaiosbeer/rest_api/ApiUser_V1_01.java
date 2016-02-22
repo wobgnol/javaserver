@@ -3,19 +3,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.sun.jersey.core.util.Base64;
 
 import de.moaiosbeer.dao.Game_V1_01_DaO;
 import de.moaiosbeer.dao.User_V1_01_DaO;
@@ -23,9 +20,16 @@ import de.moaiosbeer.db.models.Game_V1_01;
 import de.moaiosbeer.db.models.Playsheet_V1_01;
 import de.moaiosbeer.db.models.User_V1_01;
 import de.moaiosbeer.helper.MoaHttpClient;
-import de.moaiosbeer.helper.SessionOwner;
 
-
+/**
+ * Dieser Api Pfad [ ./rest/v1.01/users ] Ist der Hauptaufsatzpunkt der ApiUser_V1_01
+ * Welcher alle Öffentlichen Rest-Calls welche für die Klasse de.moaiosbeer.db.models.User_V1_01.java 
+ * bereitgestellt werden sollen.
+ * 
+ * Http Methoden mit Methoden Auffruf an dieser URL: GET oder POST
+ * Weitere Methoden Erlaubt aber geben keinen Content zurück
+ * @author Stephan
+ */
 @Path("v1.01/users")
 public class ApiUser_V1_01 {
 	
@@ -146,7 +150,7 @@ public class ApiUser_V1_01 {
 	
 	/**Dieser Api Pfad [ ./rest/v1.01/users/{auth}/games ] ist für den Admin,player und den manager-gui gedacht. 
 	 * Hier kann eine ein Json Array von GameDetail-objekten via http-get anhand des Auth-Tokens ermittelt werden.	 
-	 * @return Json Objekt einer UserID der Form: { "id": 1 }*/
+	 * @return Json Array von Gamedetails*/
 	@GET
 	@RolesAllowed({"admin","player","manager-gui"}) 
 	@Consumes({MediaType.APPLICATION_JSON, MediaType.TEXT_HTML,MediaType.TEXT_PLAIN})
@@ -209,9 +213,10 @@ public class ApiUser_V1_01 {
 
 
 	  /**
-	   * 
-	   * @param auth
-	   * @return
+	   *Dieser Api Pfad [ ./rest/v1.01/users/{auth}/new ] ist für die Registrierung eines Nutzers gedacht.
+	   *Es wird ein Neuer Nutzer im System angelegt,Wenn es diesen noch nicht gab.
+	   * @param auth Es muss sich über Den Auth Token des user register mit der rolle register angemeldet werden.
+	   * @return 
 	   */
 	  @POST
 	  @RolesAllowed("register")

@@ -15,6 +15,7 @@
 */
 package de.moaiosbeer.dao;
 
+/*TODO Fehlerliste Implementieren mit Logging*/
 public class Fehlerliste {
 	
 	
