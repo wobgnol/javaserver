@@ -62,8 +62,8 @@ public class Game_V1_01 {
 	private String[] role = {"Wholesaler","Distributor","Retailer","Factory"};
 	
 	// wichtig ! FetchType.EAGER sonst kann Jakson nicht die games eines Student ausgeben:
-	@ManyToMany(cascade = CascadeType.ALL)
 	@LazyCollection(LazyCollectionOption.FALSE) 
+	@ManyToMany(cascade = CascadeType.ALL)
 	private List<Playsheet_V1_01> playsheets = new ArrayList<Playsheet_V1_01>(0);
 
 	
